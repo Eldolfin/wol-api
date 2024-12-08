@@ -7,6 +7,9 @@
 - [ ]: nixos module with a systemd service
 - [ ]: integration in dashboard or something
 - [ ]: frontend
+- [ ]: shutdown
+- [ ]: on off stage with ping
+- [ ]: connect vdi button
 
 rewrite of this in rust 🦀
 https://github.com/rix1337/WakeOnLAN-API/blob/main/wol_api/run.py
