@@ -1,0 +1,10 @@
+[[language]]
+name = "vue"
+auto-format = false
+formatter = { command = "prettier", args = ["--parser", "vue"] }
+language-servers = ["vuels", "typescript-language-server", "emmet-lsp", "scls"] # Emmet en snippet completion for the last 2
+
+[[language-server.typescript-language-server.config.plugins]]
+name = "@vue/typescript-plugin"
+location = "node_modules/@vue/typescript-plugin"
+languages = ["vue"]

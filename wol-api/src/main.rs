@@ -222,7 +222,11 @@ async fn main() -> anyhow::Result<()> {
 
     let machine_api = warp::path("machine").and(machine::handlers(&config, args.dry_run));
 
-    warp::serve(api_doc.or(rapidoc_handler).or(machine_api))
+    // let cors = warp::cors().allow_origin("http://localhost:3000").allow_methods(vec!["GET", "POST"]);
+    let cors = warp::cors().allow_any_origin();
+    let routes = api_doc.or(rapidoc_handler).or(machine_api).with(cors);
+
+    warp::serve(routes)
         .run(([0, 0, 0, 0], 3030))
         .await;
     Ok(())

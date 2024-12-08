@@ -5,7 +5,11 @@
   inputs,
   ...
 }: {
-  packages = [pkgs.yarn];
+  packages = [
+    pkgs.yarn
+    # pkgs.vue-language-server
+    # pkgs.nodePackages_latest."@vue/language-server"
+  ];
 
   languages.typescript.enable = true;
   scripts.hello.exec = ''
