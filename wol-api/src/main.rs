@@ -1,6 +1,6 @@
 use warp::Filter;
 use wol::MacAddr;
-use std::str::FromStr;
+use core::str::FromStr;
 
 use anyhow::Context as _;
 use clap::Parser;
@@ -8,7 +8,6 @@ use log::{debug, info};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
-
 /// Application configuration
 struct Args {
     /// do not actually send wol packets
@@ -30,7 +29,7 @@ async fn main() {
                 false => send_wol,
             };
             match send_wol(mac_addr.as_str()) {
-                Ok(()) => "Ok".to_string(),
+                Ok(()) => "Ok".to_owned(),
                 Err(e) => e.to_string(),
             }
         });

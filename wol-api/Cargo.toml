@@ -14,7 +14,7 @@ env_logger = "0.11.5"
 log = "0.4.22"
 wol-rs = "1.1.0"
 tokio = { version = "1", features = ["full"] }
-warp = "0.3"
+warp = { version = "0.3", default-features = false }
 anyhow = { version = "1.0.94", features = ["backtrace"] }
 
 
@@ -53,3 +53,4 @@ shadow_unrelated = "allow"
 unreachable = "allow"
 semicolon_outside_block = "allow"
 string_slice = "allow"
+match_bool = "allow"
