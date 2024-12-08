@@ -1,25 +1,61 @@
+use warp::Filter;
+use wol::MacAddr;
+use std::str::FromStr;
+
+use anyhow::Context as _;
 use clap::Parser;
+use log::{debug, info};
 
 #[derive(Parser, Debug)]
-#[clap(author = "eldolfin", version, about)]
+#[clap(author, version, about)]
+
 /// Application configuration
 struct Args {
-    /// whether to be verbose
-    #[arg(short = 'v')]
-    verbose: bool,
-
-    /// an optional name to greet
-    #[arg()]
-    name: Option<String>,
+    /// do not actually send wol packets
+    #[arg(short = 'n')]
+    dry_run: bool,
 }
 
-fn main() {
+
+#[tokio::main]
+async fn main() {
+    env_logger::init();
     let args = Args::parse();
-    if args.verbose {
-        println!("DEBUG {args:?}");
+    debug!("{args:?}");
+
+       let hello = warp::path!("wake" / String)
+        .map(move |mac_addr: String| {
+            let send_wol = match args.dry_run {
+                true => send_wol_dry_run,
+                false => send_wol,
+            };
+            match send_wol(mac_addr.as_str()) {
+                Ok(()) => "Ok".to_string(),
+                Err(e) => e.to_string(),
+            }
+        });
+
+    warp::serve(hello)
+        .run(([0, 0, 0, 0], 3030))
+        .await;
+
+}
+
+fn send_wol(mac_addr: &str) -> anyhow::Result<()>{
+use wol::send_wol;
+    let mac_addr = MacAddr::from_str(mac_addr).map_err(|err| anyhow::Error::msg(err.to_string()))?;
+    info!("Sending wake on lan to {}",mac_addr.to_string().to_uppercase());
+    send_wol(
+        mac_addr,
+        None,
+        None,
+    )
+    .context("Could not send wold")?;
+    Ok(())
     }
-    println!(
-        "Hello {} (from wol-relay-server)!",
-        args.name.unwrap_or("world".to_string())
-    );
+
+fn send_wol_dry_run(mac_addr: &str) -> anyhow::Result<()>{
+    let mac_addr = MacAddr::from_str(mac_addr).map_err(|err| anyhow::Error::msg(err.to_string()))?;
+    info!("Sending wake on lan to {}",mac_addr.to_string().to_uppercase());
+    Ok(())
 }

@@ -10,3 +10,46 @@ version = "0.1.0"
 
 [dependencies]
 clap = { version = "4.3.14", features = ["derive"] }
+env_logger = "0.11.5"
+log = "0.4.22"
+wol-rs = "1.1.0"
+tokio = { version = "1", features = ["full"] }
+warp = "0.3"
+anyhow = { version = "1.0.94", features = ["backtrace"] }
+
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+restriction = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+# meta
+blanket_clippy_restriction_lints = "allow"
+missing_docs_in_private_items = "allow"
+cargo_common_metadata = "allow"
+
+# style
+implicit_return = { level = "allow", priority = 1 }
+shadow_reuse = "allow"
+unwrap_used = "allow"
+expect_used = "allow"
+question_mark_used = "allow"
+many_single_char_names = "allow"
+min_ident_chars = "allow"
+indexing_slicing = "allow"
+trivial_regex = "allow"
+single_call_fn = "allow"
+print_stdout = "allow"
+missing_const_for_fn = "allow"
+arithmetic_side_effects = "allow"
+as_conversions = "allow"
+cast_sign_loss = "allow"
+integer_division = "allow"
+integer_division_remainder_used = "allow"
+unseparated_literal_suffix = "allow"
+shadow_unrelated = "allow"
+unreachable = "allow"
+semicolon_outside_block = "allow"
+string_slice = "allow"
