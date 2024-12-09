@@ -13,6 +13,8 @@
 - [ ]: docker compose déployé
 - [ ]: deploy on rpi
 - [ ]: auto deploy on push
+- [ ]: machine agent reporting state + monitoring stats
+- [ ]: nix service agent
 
 rewrite of this in rust 🦀
 https://github.com/rix1337/WakeOnLAN-API/blob/main/wol_api/run.py
