@@ -1,0 +1,29 @@
+services:
+  wol-api:
+    image: todo:non-existant-tag
+    build: ../wol-api
+    restart: unless-stopped
+    volumes:
+      - "./wol-config.yml:/app/config.yaml"
+
+  wol-panel:
+    image: todo:non-existant-tag
+    build: ../wol-panel
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      # - ./site:/srv
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

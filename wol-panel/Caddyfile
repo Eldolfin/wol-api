@@ -1,0 +1,3 @@
+http://:3000
+root * /var/www
+file_server

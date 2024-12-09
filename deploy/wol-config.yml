@@ -1,0 +1,4 @@
+machines:
+  tour:
+    mac: "f4:93:9f:eb:56:a8"
+    ip: "192.168.1.167"

@@ -1,0 +1,26 @@
+# note: never use the :latest tag in a production site
+FROM node:23-alpine3.19 AS builder
+WORKDIR /app
+COPY yarn.lock package.json ./
+
+RUN yarn install
+
+COPY ./server ./server
+COPY ./public ./public
+COPY ./src ./src
+COPY                  \
+  ./nuxt.config.ts    \
+  ./auto-imports.d.ts \
+  ./app.vue           \
+  ./.env              \
+  ./tsconfig.json     \
+  ./components.d.ts   \
+  .
+
+RUN yarn run generate
+
+FROM caddy:2.9-alpine
+
+COPY Caddyfile /etc/caddy/Caddyfile
+COPY --from=builder /app/.output/public/ /var/www
+
