@@ -2,7 +2,7 @@
 
 ## TODO:
 
-- [ ]: Rust part, web server, wol and cli/config
+- [x]: Rust part, web server, wol and cli/config
 - [ ]: nixos package and nix ci
 - [ ]: nixos module with a systemd service
 - [ ]: integration in dashboard or something
