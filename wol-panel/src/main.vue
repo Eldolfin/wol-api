@@ -3,7 +3,8 @@
     ip: string,
     mac: string,
   }
-  const api = "http://localhost:3030/machine";
+  const endpoint = import.meta.env.VITE_WOL_API_URL;
+  const api = `${endpoint}/machine`;
   const data = await (await fetch(`${api}/list`)).json();
   const machines: Map<string, Machine> = new Map(Object.entries(data.machines));
   console.log(machines)
