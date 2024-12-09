@@ -63,13 +63,17 @@ mod machine {
     use anyhow::Context as _;
     use core::convert::Infallible;
     use core::str::FromStr;
-    use log::{error, info};
-    use std::sync::{Arc, Mutex};
+    use log::{debug, info};
+    use std::{any::Any, sync::{Arc, Mutex}};
+    use tokio::process::Command;
     use wol::MacAddr;
 
     use utoipa::OpenApi;
     use warp::{
-        http, reject::Rejection, reply::{self, Reply}, Filter
+        http,
+        reject::Rejection,
+        reply::{self, Reply},
+        Filter,
     };
 
     use crate::{with_store, Config};
@@ -117,15 +121,37 @@ mod machine {
             ("name" = String, Path, description = "Name of the machine to shutdown")
         ),
     )]
-    pub fn shutdown(
+    pub async fn shutdown(
         store: Store,
-        name: &str,
+        name: String,
         _dry_run: bool,
     ) -> Result<Box<dyn Reply>, Infallible> {
-        let Some(machine) = store.lock().unwrap().by_name(name) else {
-            return Ok(Box::new(reply::with_status("Machine does not exist", http::StatusCode::NOT_FOUND)));
+        let Some(machine) = store.lock().unwrap().by_name(&name) else {
+            return Ok(Box::new(reply::with_status(
+                "Machine does not exist",
+                http::StatusCode::NOT_FOUND,
+            )));
         };
-        error!("TODO: machine shutdown {:#?}", machine);
+        let mut cmd = Command::new("ssh");
+        cmd
+            .arg("-o")
+            .arg("StrictHostKeyChecking=no")
+            .arg(machine.ip)
+            .arg("sudo")
+            .arg("systemctl")
+            .arg("poweroff");
+        debug!("Running command: {:?}", &cmd);
+        let output = cmd
+            .output()
+            .await;
+        if let Err(err) = output
+        {
+            return Ok(Box::new(reply::with_status(
+                format!("ssh command failed: {err}"),
+                http::StatusCode::INTERNAL_SERVER_ERROR,
+            )));
+        };
+        debug!("Command output: {:?}", &output);
         Ok(Box::new(reply::reply()))
     }
 
@@ -143,7 +169,10 @@ mod machine {
     pub fn wake(store: Store, name: &str, dry_run: bool) -> Result<Box<dyn Reply>, Infallible> {
         // TODO: change machine state
         let Some(machine) = store.lock().unwrap().by_name(name) else {
-            return Ok(Box::new(reply::with_status("Machine does not exist", http::StatusCode::NOT_FOUND)));
+            return Ok(Box::new(reply::with_status(
+                "Machine does not exist",
+                http::StatusCode::NOT_FOUND,
+            )));
         };
         let send_wol = match dry_run {
             true => send_wol_dry_run,
@@ -168,13 +197,13 @@ mod machine {
 
         let wake = {
             let store = store.clone();
-            warp::path!(String/"wake")
+            warp::path!(String / "wake")
                 .map(move |mac_addr: String| wake(store.clone(), &mac_addr, dry_run))
         };
         let shutdown = {
             let store = store.clone();
-            warp::path!(String/"shutdown" )
-                .map(move |mac_addr: String| shutdown(store.clone(), &mac_addr, dry_run))
+            warp::path!(String / "shutdown")
+                .and_then(move |mac_addr: String| shutdown(store.clone(), mac_addr, dry_run))
         };
 
         list.or(wake).or(shutdown)
@@ -226,9 +255,7 @@ async fn main() -> anyhow::Result<()> {
     let cors = warp::cors().allow_any_origin();
     let routes = api_doc.or(rapidoc_handler).or(machine_api).with(cors);
 
-    warp::serve(routes)
-        .run(([0, 0, 0, 0], 3030))
-        .await;
+    warp::serve(routes).run(([0, 0, 0, 0], 3030)).await;
     Ok(())
 }
 fn with_store(store: Store) -> impl Filter<Extract = (Store,), Error = Infallible> + Clone {
