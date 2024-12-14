@@ -1,6 +1,6 @@
 services:
   wol-api:
-    image: todo-api:non-existant-tag
+    image: gitea.eldolfin.top/eldolfin/wol-api:latest
     build: ../wol-api
     restart: unless-stopped
     environment:
@@ -10,7 +10,7 @@ services:
       - "~/.ssh/id_ed25519:/root/.ssh/id_ed25519"
 
   wol-panel:
-    image: todo-panel:non-existant-tag
+    image: gitea.eldolfin.top/eldolfin/wol-panel:latest
     build: ../wol-panel
     restart: unless-stopped
     depends_on:
