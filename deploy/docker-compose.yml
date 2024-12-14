@@ -3,8 +3,11 @@ services:
     image: todo-api:non-existant-tag
     build: ../wol-api
     restart: unless-stopped
+    environment:
+      - RUST_LOG=debug
     volumes:
       - "./wol-config.yml:/app/config.yml"
+      - "~/.ssh/id_ed25519:/root/.ssh/id_ed25519"
 
   wol-panel:
     image: todo-panel:non-existant-tag

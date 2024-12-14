@@ -71,19 +71,17 @@ pub async fn shutdown(
         )));
     };
     let mut cmd = Command::new("ssh");
-    cmd
+    cmd.arg("-i")
+        .arg("~/.ssh/id_ed25519")
         .arg("-o")
         .arg("StrictHostKeyChecking=no")
-        .arg(machine.ip)
+        .arg(format!("oscar@{}", machine.ip))
         .arg("sudo")
         .arg("systemctl")
         .arg("poweroff");
     debug!("Running command: {:?}", &cmd);
-    let output = cmd
-        .output()
-        .await;
-    if let Err(err) = output
-    {
+    let output = cmd.output().await;
+    if let Err(err) = output {
         return Ok(Box::new(reply::with_status(
             format!("ssh command failed: {err}"),
             http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -126,7 +124,7 @@ pub fn handlers(
     config: &Config,
     dry_run: bool,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-     fn with_store(store: Store) -> impl Filter<Extract = (Store,), Error = Infallible> + Clone {
+    fn with_store(store: Store) -> impl Filter<Extract = (Store,), Error = Infallible> + Clone {
         warp::any().map(move || store.clone())
     }
     let store = Store::new(Mutex::new(config.clone()));
@@ -170,4 +168,3 @@ fn send_wol_dry_run(mac_addr: &str) -> anyhow::Result<()> {
     );
     Ok(())
 }
-

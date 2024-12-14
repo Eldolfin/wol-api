@@ -2,11 +2,14 @@ use figment::{
     providers::{Format as _, Yaml},
     Figment,
 };
-use wol_relay_server::{config::Config, machine};
-use std::{net::{IpAddr, Ipv4Addr, SocketAddr}, path::PathBuf};
+use std::{
+    net::{IpAddr, Ipv4Addr, SocketAddr},
+    path::PathBuf,
+};
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use warp::{reply, Filter};
+use wol_relay_server::{config::Config, machine};
 
 use anyhow::Context as _;
 use clap::Parser;
@@ -26,7 +29,6 @@ struct Args {
     #[arg(short = 'c')]
     config_path: PathBuf,
 }
-
 
 #[derive(OpenApi)]
 #[openapi(
