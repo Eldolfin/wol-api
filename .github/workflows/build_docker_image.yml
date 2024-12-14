@@ -1,0 +1,44 @@
+name: Build docker image
+
+on:
+  - push
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Docker
+        run: curl -fsSL https://get.docker.com | sh
+
+      - name: Log in Container registry
+        run: docker login gitea.eldolfin.top -u oscar -p ${{ secrets.REGISTRY_RW_TOKEN }}
+
+      - name: Build and push panel docker image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: gitea.eldolfin.top/Eldolfin/wol-panel:latest
+          file: Dockerfile
+          context: ./wol-panel
+      
+      - name: Build and push api docker image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: gitea.eldolfin.top/Eldolfin/wol-api:latest
+          file: Dockerfile
+          context: ./wol-api
+
+      - name: Dive panel
+        uses: MaxymVlasov/dive-action@1.0.1
+        with:
+          image: "gitea.eldolfin.top/Eldolfin/wol-panel:latest"
+          config-file: ${{ github.workspace }}/.dive-ci.yml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dive api
+        uses: MaxymVlasov/dive-action@1.0.1
+        with:
+          image: "gitea.eldolfin.top/Eldolfin/wol-api:latest"
+          config-file: ${{ github.workspace }}/.dive-ci.yml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
