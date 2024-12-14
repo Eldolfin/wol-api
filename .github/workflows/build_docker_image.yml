@@ -11,6 +11,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Docker
         run: curl -fsSL https://get.docker.com | sh
+        
+      - name: Install dive
+        run: |
+          DIVE_VERSION=$(curl -sL "https://api.github.com/repos/wagoodman/dive/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+          curl -OL https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.deb
+          sudo apt install ./dive_${DIVE_VERSION}_linux_amd64.deb
 
       - name: Log in Container registry
         run: docker login gitea.eldolfin.top -u oscar -p ${{ secrets.REGISTRY_RW_TOKEN }}
@@ -32,15 +38,7 @@ jobs:
           context: ./wol-api
 
       - name: Dive panel
-        uses: MaxymVlasov/dive-action@v1.0.1
-        with:
-          image: "gitea.eldolfin.top/eldolfin/wol-panel:latest"
-          config-file: ${{ github.workspace }}/.dive-ci.yml
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: CI=true dive gitea.eldolfin.top/eldolfin/wol-panel:latest
 
       - name: Dive api
-        uses: MaxymVlasov/dive-action@v1.0.1
-        with:
-          image: "gitea.eldolfin.top/eldolfin/wol-api:latest"
-          config-file: ${{ github.workspace }}/.dive-ci.yml
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: CI=true dive gitea.eldolfin.top/eldolfin/wol-api:latest
