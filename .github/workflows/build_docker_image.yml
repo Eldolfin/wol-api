@@ -15,8 +15,9 @@ jobs:
       - name: Install dive
         run: |
           DIVE_VERSION=$(curl -sL "https://api.github.com/repos/wagoodman/dive/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
-          curl -OL https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_amd64.deb
-          sudo apt install ./dive_${DIVE_VERSION}_linux_amd64.deb
+          ARCH="arm64"
+          curl -OL https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_${ARCH}.deb
+          sudo apt install ./dive_${DIVE_VERSION}_linux_${ARCH}.deb
 
       - name: Log in Container registry
         run: docker login gitea.eldolfin.top -u oscar -p ${{ secrets.REGISTRY_RW_TOKEN }}
