@@ -16,7 +16,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: gitea.eldolfin.top/Eldolfin/wol-panel:latest
+          tags: gitea.eldolfin.top/eldolfin/wol-panel:latest
           file: Dockerfile
           context: ./wol-panel
       
@@ -24,20 +24,20 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: gitea.eldolfin.top/Eldolfin/wol-api:latest
+          tags: gitea.eldolfin.top/eldolfin/wol-api:latest
           file: Dockerfile
           context: ./wol-api
 
       - name: Dive panel
         uses: MaxymVlasov/dive-action@v1.0.1
         with:
-          image: "gitea.eldolfin.top/Eldolfin/wol-panel:latest"
+          image: "gitea.eldolfin.top/eldolfin/wol-panel:latest"
           config-file: ${{ github.workspace }}/.dive-ci.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Dive api
         uses: MaxymVlasov/dive-action@v1.0.1
         with:
-          image: "gitea.eldolfin.top/Eldolfin/wol-api:latest"
+          image: "gitea.eldolfin.top/eldolfin/wol-api:latest"
           config-file: ${{ github.workspace }}/.dive-ci.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
