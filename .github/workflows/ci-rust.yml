@@ -1,7 +1,7 @@
-on: [push]
-
-name: CI
-
+name: "CI Rust"
+on:
+  push:
+  pull_request:
 jobs:
   check:
     name: Rust project
@@ -11,14 +11,12 @@ jobs:
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: nightly
+            toolchain: stable
             override: true
             components: rustfmt, clippy
-
-      # `cargo check` command here will use installed `nightly`
-      # as it is set as an "override" for current directory
-
       - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
+        run: cd wol-api && cargo check
+      - name: Run cargo clippy
+        run: cd wol-api && cargo clippy
+      - name: Run cargo format
+        run: cd wol-api && cargo fmt --check
