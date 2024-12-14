@@ -20,7 +20,7 @@ jobs:
         with:
           push: true
           tags: gitea.eldolfin.top/eldolfin/wol-panel:latest
-          file: Dockerfile
+          file: ./wol-panel/Dockerfile
           context: ./wol-panel
       
       - name: Build and push api docker image
@@ -28,7 +28,7 @@ jobs:
         with:
           push: true
           tags: gitea.eldolfin.top/eldolfin/wol-api:latest
-          file: Dockerfile
+          file: ./wol-api/Dockerfile
           context: ./wol-api
 
       - name: Dive panel
