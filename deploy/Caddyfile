@@ -1,8 +1,7 @@
 http://
-handle_path /api/* {
+handle /api/* {
 	reverse_proxy wol-api:3030
 }
-handle_path /* {
+handle {
 	reverse_proxy wol-panel:3000
 }
-
