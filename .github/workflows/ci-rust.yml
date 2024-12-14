@@ -7,6 +7,7 @@ jobs:
     name: Rust project
     runs-on: ubuntu-latest
     steps:
+      - uses: olix0r/cargo-action-fmt/setup@v2
       - uses: actions/checkout@v2
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
@@ -15,8 +16,8 @@ jobs:
             override: true
             components: rustfmt, clippy
       - name: Run cargo check
-        run: cd wol-api && cargo check
+        run: cd wol-api && cargo check -q --message-format=json | cargo-action-fmt
       - name: Run cargo clippy
-        run: cd wol-api && cargo clippy
+        run: cd wol-api && cargo clippy -q --message-format=json | cargo-action-fmt
       - name: Run cargo format
         run: cd wol-api && cargo fmt --check
