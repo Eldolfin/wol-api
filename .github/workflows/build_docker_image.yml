@@ -1,8 +1,7 @@
-name: Build docker image
-
+name: "Build docker image"
 on:
-  - push
-
+  push:
+  pull_request:
 jobs:
   docker:
     runs-on: ubuntu-latest
