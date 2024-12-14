@@ -29,7 +29,7 @@ jobs:
           context: ./wol-api
 
       - name: Dive panel
-        uses: MaxymVlasov/dive-action@1.0.1
+        uses: MaxymVlasov/dive-action@v1.0.1
         with:
           image: "gitea.eldolfin.top/Eldolfin/wol-panel:latest"
           config-file: ${{ github.workspace }}/.dive-ci.yml
