@@ -7,7 +7,7 @@ services:
     environment:
       - RUST_LOG=debug
     volumes:
-      - "./wol-config.yml:/app/config.yml"
+      - "/home/oscar/wol-api/deploy/wol-config.yml:/app/config.yml"
       - "~/.ssh/id_ed25519:/root/.ssh/id_ed25519"
 
   wol-panel:
@@ -27,7 +27,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - /home/oscar/wol-api/deploy/Caddyfile:/etc/caddy/Caddyfile
       # - ./site:/srv
       - caddy_data:/data
       - caddy_config:/config
