@@ -8,6 +8,7 @@
   dotenv.disableHint = true;
   packages = [
     pkgs.yarn
+    pkgs.nodePackages_latest.prettier
     # pkgs.vue-language-server
     # pkgs.nodePackages_latest."@vue/language-server"
   ];

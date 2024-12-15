@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     Machine_list: typeof import('./src/components/machine_list.vue')['default']
     MachineList: typeof import('./src/components/MachineList.vue')['default']
+    NAvatar: typeof import('naive-ui')['NAvatar']
     NButton: typeof import('naive-ui')['NButton']
     NButtonGroup: typeof import('naive-ui')['NButtonGroup']
     NCard: typeof import('naive-ui')['NCard']
@@ -17,6 +18,7 @@ declare module 'vue' {
     NIconWrapper: typeof import('naive-ui')['NIconWrapper']
     NList: typeof import('naive-ui')['NList']
     NListItem: typeof import('naive-ui')['NListItem']
+    NSpace: typeof import('naive-ui')['NSpace']
     NThing: typeof import('naive-ui')['NThing']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

@@ -1,6 +1,6 @@
 [[language]]
 name = "vue"
-auto-format = false
+auto-format = true
 formatter = { command = "prettier", args = ["--parser", "vue"] }
 language-servers = ["vuels", "typescript-language-server", "scls"] # Emmet en snippet completion for the last 2
 
