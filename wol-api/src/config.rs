@@ -12,12 +12,5 @@ pub struct Machine {
 
 #[derive(ToSchema, Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
-    machines: HashMap<String, Machine>,
-}
-
-impl Config {
-    // TODO: move this logic in a service or something
-    pub fn by_name(&self, name: &str) -> Option<Machine> {
-        self.machines.get(name).cloned()
-    }
+    pub machines: HashMap<String, Machine>,
 }

@@ -18,6 +18,8 @@
         bacon
         config.process-compose.cargo-doc-live.outputs.package
         entr
+        rust-analyzer
+        rustfmt
 
         # inputs.omnix.packages # TODO:
       ];
