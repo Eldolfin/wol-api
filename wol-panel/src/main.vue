@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import "./main.css";
 import MachineList from "./components/MachineList.vue";
 
 import createClient from "openapi-fetch";

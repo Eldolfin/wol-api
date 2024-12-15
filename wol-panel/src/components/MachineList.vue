@@ -5,8 +5,14 @@ import { useThemeVars } from "naive-ui";
 import type { components } from "../lib/api/v1";
 
 const api = inject(api_client)!;
-const data = await api.GET("/api/machine/list");
-const machines = data.data!.machines;
+
+const {
+  data,
+  status,
+  refresh: refresh_computers,
+} = useAsyncData("computer-list", () => api.GET("/api/machine/list"));
+const machines = computed(() => data.value?.data?.machines);
+useIntervalFn(async () => await refresh_computers(), 1000)
 
 const theme = useThemeVars();
 

@@ -22,6 +22,11 @@
 rewrite of this in rust 🦀
 https://github.com/rix1337/WakeOnLAN-API/blob/main/wol_api/run.py
 
+## Resources
+Might be interesting at some point
+- https://motion.vueuse.org/api/use-motion
+- https://sound.vueuse.org/
+
 ## Similar projects
 
 - https://github.com/seriousm4x/UpSnap
