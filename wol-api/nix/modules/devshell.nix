@@ -17,6 +17,7 @@
         nixd # Nix language server
         bacon
         config.process-compose.cargo-doc-live.outputs.package
+        entr
 
         # inputs.omnix.packages # TODO:
       ];
