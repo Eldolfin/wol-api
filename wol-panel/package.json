@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@vicons/ionicons5": "^0.12.0",
     "nuxt": "^3.14.1592",
     "nuxtjs-naive-ui": "1.0.2",
     "typescript": "latest",
