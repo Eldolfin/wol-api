@@ -62,7 +62,7 @@ pub fn list(store: Store) -> impl warp::Reply {
 pub async fn shutdown(
     store: Store,
     name: String,
-    _dry_run: bool,
+    dry_run: bool,
 ) -> Result<Box<dyn Reply>, Infallible> {
     let Some(machine) = store.lock().unwrap().by_name(&name) else {
         return Ok(Box::new(reply::with_status(
@@ -79,15 +79,25 @@ pub async fn shutdown(
         .arg("sudo")
         .arg("systemctl")
         .arg("poweroff");
-    debug!("Running command: {:?}", &cmd);
-    let output = cmd.output().await;
-    if let Err(err) = output {
-        return Ok(Box::new(reply::with_status(
-            format!("ssh command failed: {err}"),
-            http::StatusCode::INTERNAL_SERVER_ERROR,
-        )));
-    };
-    debug!("Command output: {:?}", &output);
+    info!(
+        "Shutting down machine '{}'",
+        &name
+    );
+    debug!(
+        "Running command: {:?}{}",
+        &cmd,
+        if dry_run { " (dry run)" } else { "" }
+    );
+    if !dry_run {
+        let output = cmd.output().await;
+        if let Err(err) = output {
+            return Ok(Box::new(reply::with_status(
+                format!("ssh command failed: {err}"),
+                http::StatusCode::INTERNAL_SERVER_ERROR,
+            )));
+        };
+        debug!("Command output: {:?}", &output);
+    }
     Ok(Box::new(reply::reply()))
 }
 
