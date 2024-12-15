@@ -3,7 +3,8 @@ services:
     image: gitea.eldolfin.top/eldolfin/wol-api:latest
     build: ../wol-api
     restart: unless-stopped
-    network_mode: host
+    networks:
+      - host
     environment:
       - RUST_LOG=debug
     volumes:
@@ -35,3 +36,8 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+
+networks:
+  host:
+    name: host
+    external: true
