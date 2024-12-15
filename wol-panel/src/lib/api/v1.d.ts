@@ -67,12 +67,17 @@ export interface components {
             ip: string;
             /** @example f4:93:9f:eb:56:a8 */
             mac: string;
+            /**
+             * Format: int32
+             * @example 22
+             */
+            "ssh-port"?: number;
         };
         /**
          * @example on
          * @enum {string}
          */
-        State: "unknown" | "on" | "off";
+        State: "unknown" | "on" | "off" | "pending_off";
         StoreInner: {
             machines: components["schemas"]["Machine"][];
         };

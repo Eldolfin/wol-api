@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Power, Stop } from "@vicons/ionicons5";
+import { Power, Stop, CloudOffline } from "@vicons/ionicons5";
 import { api_client } from "../provides";
 import { useThemeVars } from "naive-ui";
 import type { components } from "../lib/api/v1";
+import { unreachable } from "../lib/utils/rust";
 
 const api = inject(api_client)!;
 
@@ -10,7 +11,18 @@ const {
   data,
   status,
   refresh: refresh_computers,
-} = useAsyncData("computer-list", () => api.GET("/api/machine/list"));
+  error,
+} = useAsyncData("computer-list", () =>
+  api.GET("/api/machine/list").then((res) => {
+    if (res.response.status !== 200) {
+      throw createError({
+        statusCode: res.response.status,
+        statusMessage: "Backend fail",
+      });
+    }
+    return res;
+  }),
+);
 
 const machines = computed(() => data.value?.data?.machines);
 
@@ -43,6 +55,22 @@ function handle_shutdown(machine_name: string) {
       },
     })
     .finally(() => (loading.value = false));
+}
+
+function handleSwitchMachineState(
+  machine: components["schemas"]["Machine"],
+  newState: components["schemas"]["State"],
+) {
+  switch (newState) {
+    case "on":
+      handle_wake(machine.name);
+      break;
+    case "off":
+      handle_shutdown(machine.name);
+      break;
+    default:
+      unreachable();
+  }
 }
 
 function capitalize(s: string): string {
@@ -90,37 +118,63 @@ function machine_color(state: components["schemas"]["State"]) {
               {{ `mac: ${machine.config.mac}` }}
             </template>
             <template #action>
-              <n-button
-                v-if="machine.state == 'off'"
-                class="machine-action"
-                @click="() => handle_wake(machine.name)"
+              <n-switch
+                size="large"
                 :loading="loading"
-                :disabled="loading"
+                v-model:value="machine.state"
+                checked-value="on"
+                unchecked-value="off"
+                @update:value="
+                  (value) => handleSwitchMachineState(machine, value)
+                "
               >
-                <template #icon>
-                  <n-icon><Power /></n-icon>
+                <template #checked-icon>
+                  <n-icon :component="Stop" />
                 </template>
-                Wake
-              </n-button>
-              <n-button
-                v-if="machine.state == 'on'"
-                class="machine-action"
-                @click="() => handle_shutdown(machine.name)"
-                :loading="loading"
-                :disabled="loading"
-              >
-                <template #icon>
-                  <n-icon><Stop /></n-icon>
+                <template #unchecked-icon>
+                  <n-icon :component="Power" />
                 </template>
-                Shutdown
-              </n-button>
+              </n-switch>
+              <!-- <n-button -->
+              <!-- v-if="machine.state == 'off'" -->
+              <!-- class="machine-action" -->
+              <!-- @click="() => handle_wake(machine.name)" -->
+              <!-- :loading="loading" -->
+              <!-- :disabled="loading" -->
+              <!-- > -->
+              <!-- <template #icon> -->
+              <!-- <n-icon><Power /></n-icon> -->
+              <!-- </template> -->
+              <!-- Wake -->
+              <!-- </n-button> -->
+              <!-- <n-button -->
+              <!-- v-if="machine.state == 'on'" -->
+              <!-- class="machine-action" -->
+              <!-- @click="() => handle_shutdown(machine.name)" -->
+              <!-- :loading="loading" -->
+              <!-- :disabled="loading" -->
+              <!-- > -->
+              <!-- <template #icon> -->
+              <!-- <n-icon><Stop /></n-icon> -->
+              <!-- </template> -->
+              <!-- Shutdown -->
+              <!-- </n-button> -->
             </template>
           </n-thing>
         </n-card>
       </n-list-item>
     </template>
     <template v-else-if="status == 'idle'"> Loading... </template>
-    <template v-else-if="status == 'error'"> TODO: error? </template>
+    <template v-else-if="status == 'error'">
+      <n-h2>
+        <n-text type="error" strong>
+          <n-icon>
+            <CloudOffline />
+          </n-icon>
+          {{ error?.name }}: {{ error?.message }}
+        </n-text>
+      </n-h2>
+    </template>
   </n-list>
 </template>
 

@@ -15,7 +15,8 @@
   run)
   - [ ]: run command once health check succeed
 - [ ]: config for running arbitrary command 'actions' on host/machine
-- [ ]: machine agent reporting state + monitoring stats
+- [ ]: machine agent reporting state + monitoring stats (cpu, memory, uptime/last online)
+  - [ ]: can also be used as an alternative to sshing
 - [ ]: nix service agent
 - [ ]: nixos package and nix ci
 - [ ]: nixos module with a systemd service

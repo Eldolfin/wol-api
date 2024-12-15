@@ -14,3 +14,4 @@ services:
       - ./config/sshd/config:/config
     ports:
       - 2222:2222
+    restart: always

@@ -1,5 +1,5 @@
-use super::{wol, Store};
-use crate::{config::Config, machine::StoreInner};
+use super::{wol, service::{Store, StoreInner}};
+use crate::config::Config;
 
 use core::convert::Infallible;
 use http::status::StatusCode;
