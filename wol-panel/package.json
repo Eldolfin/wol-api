@@ -7,13 +7,14 @@
     "dev": "nuxt dev --dotenv .env.dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "generate:api-spec": "curl -o ./node_modules/api-doc.json http://localhost:3030/api/api-doc.json && openapi-typescript ./node_modules/api-doc.json -o ./src/lib/api/v1.d.ts"
   },
   "dependencies": {
     "@vicons/ionicons5": "^0.12.0",
     "nuxt": "^3.14.1592",
     "nuxtjs-naive-ui": "1.0.2",
-    "typescript": "latest",
+    "openapi-fetch": "^0.13.3",
     "vue": "latest",
     "vue-router": "latest"
   },
@@ -22,6 +23,8 @@
     "@vue/language-server": "^2.1.10",
     "@vue/typescript-plugin": "^2.1.10",
     "naive-ui": "^2.40.3",
+    "openapi-typescript": "^7.4.4",
+    "typescript": "^5.7.2",
     "unplugin-auto-import": "^0.18.6",
     "unplugin-vue-components": "^0.27.5",
     "vfonts": "^0.0.3"

@@ -5,6 +5,7 @@
   inputs,
   ...
 }: {
+  dotenv.disableHint = true;
   packages = [
     pkgs.yarn
     # pkgs.vue-language-server
