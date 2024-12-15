@@ -163,7 +163,7 @@ fn send_wol_dry_run(mac_addr: &str) -> anyhow::Result<()> {
     let mac_addr =
         MacAddr::from_str(mac_addr).map_err(|err| anyhow::Error::msg(err.to_string()))?;
     info!(
-        "Sending wake on lan to {}",
+        "Sending wake on lan to {} (dry run)",
         mac_addr.to_string().to_uppercase()
     );
     Ok(())
