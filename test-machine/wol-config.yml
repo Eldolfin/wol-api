@@ -1,0 +1,5 @@
+machines:
+  testing-docker-container:
+    mac: "02:42:ac:12:00:02"
+    ip: "127.0.0.1"
+    ssh-port: 2222

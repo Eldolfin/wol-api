@@ -2,9 +2,8 @@ use super::{wol, Store};
 use crate::{config::Config, machine::StoreInner};
 
 use core::convert::Infallible;
-use log::{debug, info};
+use http::status::StatusCode;
 use std::{sync::Arc, time::Duration};
-use tokio::process::Command;
 use tokio::{sync::Mutex, time};
 use utoipa::OpenApi;
 use warp::{
@@ -43,43 +42,21 @@ pub async fn list(store: Store) -> Result<Box<dyn Reply>, Infallible> {
         ("name" = String, Path, description = "Name of the machine to shutdown")
     ),
 )]
+#[allow(clippy::significant_drop_tightening)]
 pub async fn shutdown(
     store: Store,
     name: String,
     dry_run: bool,
 ) -> Result<Box<dyn Reply>, Infallible> {
-    let Some(machine) = store.lock().await.by_name(&name) else {
+    let mut lock = store.lock().await;
+    let Some(machine) = lock.by_name_mut(&name) else {
         return Ok(Box::new(reply::with_status(
             "Machine does not exist",
             http::StatusCode::NOT_FOUND,
         )));
     };
-    let mut cmd = Command::new("ssh");
-    cmd.arg("-i")
-        .arg("~/.ssh/id_ed25519")
-        .arg("-o")
-        .arg("StrictHostKeyChecking=no")
-        .arg(format!("oscar@{}", machine.config.ip))
-        .arg("sudo")
-        .arg("systemctl")
-        .arg("poweroff");
-    info!("Shutting down machine '{}'", name);
-    debug!(
-        "Running command: {:?}{}",
-        &cmd,
-        if dry_run { " (dry run)" } else { "" }
-    );
-    if !dry_run {
-        let output = cmd.output().await;
-        if let Err(err) = output {
-            return Ok(Box::new(reply::with_status(
-                format!("ssh command failed: {err}"),
-                http::StatusCode::INTERNAL_SERVER_ERROR,
-            )));
-        };
-        debug!("Command output: {:?}", &output);
-    }
-    Ok(Box::new(reply::reply()))
+    
+    Ok(Box::new(reply::with_status(machine.shutdown(dry_run).await, StatusCode::OK)))
 }
 
 #[utoipa::path(
