@@ -3,24 +3,23 @@
 ## TODO:
 
 - [x]: Rust part, web server, wol and cli/config
-- [ ]: nixos package and nix ci
-- [ ]: nixos module with a systemd service
 - [x]: integration in dashboard or something
 - [x]: frontend
 - [x]: shutdown
-- [ ]: on off stage with ping
-- [ ]: connect vdi button
+- [x]: on off stage with ping
 - [x]: docker ~compose~ stack deployment
 - [x]: deploy on rpi
 - [x]: auto deploy on push
-- [ ]: machine agent reporting state + monitoring stats
-- [ ]: nix service agent
+- [ ]: connect vdi button
 - [ ]: launch apps/games with icons. (config entry with icon url and command to
   run)
-  - [ ]: run command once health check succeed 
+  - [ ]: run command once health check succeed
+- [ ]: config for running arbitrary command 'actions' on host/machine
+- [ ]: machine agent reporting state + monitoring stats
+- [ ]: nix service agent
+- [ ]: nixos package and nix ci
+- [ ]: nixos module with a systemd service
 
-rewrite of this in rust 🦀
-https://github.com/rix1337/WakeOnLAN-API/blob/main/wol_api/run.py
 
 ## Resources
 Might be interesting at some point
@@ -29,6 +28,8 @@ Might be interesting at some point
 
 ## Similar projects
 
+- https://github.com/rix1337/WakeOnLAN-API/blob/main/wol_api/run.py
+  super simple, similar to the project at the root
 - https://github.com/seriousm4x/UpSnap
   Looks feature complete, beatifull ui, database, crud machine management, auto discovery and more
 - https://github.com/Misterbabou/gptwol
