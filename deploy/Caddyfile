@@ -1,6 +1,6 @@
 http://
 handle /api/* {
-	reverse_proxy wol-api:3030
+	reverse_proxy host.docker.internal:3030
 }
 handle {
 	reverse_proxy wol-panel:3000
