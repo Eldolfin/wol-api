@@ -3,6 +3,7 @@ services:
     image: gitea.eldolfin.top/eldolfin/wol-api:latest
     build: ../wol-api
     restart: unless-stopped
+    network_mode: host
     environment:
       - RUST_LOG=debug
     volumes:
