@@ -8,7 +8,7 @@ services:
       - RUST_LOG=debug
     volumes:
       - "/home/oscar/wol-api/deploy/wol-config.yml:/app/config.yml"
-      - "~/.ssh/id_ed25519:/root/.ssh/id_ed25519"
+      - "/home/oscar/.ssh/id_ed25519:/root/.ssh/id_ed25519"
 
   wol-panel:
     image: gitea.eldolfin.top/eldolfin/wol-panel:latest
