@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::{process::Command, sync::Mutex};
 use utoipa::ToSchema;
+use super::wol;
 
 pub type Store = Arc<Mutex<StoreInner>>;
 
@@ -111,6 +112,18 @@ impl Machine {
         self.state = State::Off;
         "Shutdown machine successfully".to_owned()
     }
+
+    pub fn wake(&mut self, dry_run: bool) -> Result<String, String> {
+        info!(
+            "Sending wake on lan to {} (mac = {})",
+            self.name,self.config.mac.to_uppercase()
+        );
+        self.state = State::PendingOn;
+        match wol::send(&self.config.mac, dry_run) {
+            Ok(()) => Ok("Sent wake on lan successfully".to_owned()),
+            Err(e) => Err(e.to_string()),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, ToSchema, Default)]
@@ -121,5 +134,6 @@ pub enum State {
     Unknown,
     On,
     Off,
+    PendingOn,
     PendingOff,
 }

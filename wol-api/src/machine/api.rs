@@ -3,6 +3,7 @@ use crate::config::Config;
 
 use core::convert::Infallible;
 use http::status::StatusCode;
+use log::info;
 use std::{sync::Arc, time::Duration};
 use tokio::{sync::Mutex, time};
 use utoipa::OpenApi;
@@ -70,18 +71,20 @@ pub async fn shutdown(
         ("name" = String, Path, description = "Name of the machine to wake")
     ),
 )]
+#[allow(clippy::significant_drop_tightening)]
 pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn Reply>, Infallible> {
     // TODO: change machine state
-    let Some(machine) = store.lock().await.by_name(&name) else {
+    let mut lock = store.lock().await;
+    let Some(machine) = lock.by_name_mut(&name) else {
         return Ok(Box::new(reply::with_status(
             "Machine does not exist",
             http::StatusCode::NOT_FOUND,
         )));
     };
-    match wol::send(&machine.config.mac, dry_run) {
-        Ok(()) => Ok(Box::new(reply::reply())),
-        Err(e) => Ok(Box::new(e.to_string())),
-    }
+    Ok(Box::new(match machine.wake(dry_run) {
+        Ok(msg) => {reply::with_status(msg, StatusCode::OK)},
+        Err(msg) => {reply::with_status(msg, StatusCode::INTERNAL_SERVER_ERROR)},
+    }))
 }
 
 pub fn handlers(
