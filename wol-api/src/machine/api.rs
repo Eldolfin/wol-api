@@ -83,17 +83,17 @@ pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn R
             http::StatusCode::NOT_FOUND,
         )));
     };
-        {
-            let store = store.clone();
-            tokio::spawn(async move {
-                time::sleep(TIME_BEFORE_ASSUMING_WOL_FAILED).await;
-                let mut lock = store.lock().await;
-                let machine = lock.by_name_mut(&name).unwrap();
-                if machine.state == State::PendingOn {
-                    machine.state = State::Off;
-                }
-            });
-        }
+    {
+        let store = store.clone();
+        tokio::spawn(async move {
+            time::sleep(TIME_BEFORE_ASSUMING_WOL_FAILED).await;
+            let mut lock = store.lock().await;
+            let machine = lock.by_name_mut(&name).unwrap();
+            if machine.state == State::PendingOn {
+                machine.state = State::Off;
+            }
+        });
+    }
 
     Ok(Box::new(match machine.wake(dry_run) {
         Ok(msg) => reply::with_status(msg, StatusCode::OK),

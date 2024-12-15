@@ -77,7 +77,7 @@ export interface components {
          * @example on
          * @enum {string}
          */
-        State: "unknown" | "on" | "off" | "pending_off";
+        State: "unknown" | "on" | "off" | "pending_on" | "pending_off";
         StoreInner: {
             machines: components["schemas"]["Machine"][];
         };

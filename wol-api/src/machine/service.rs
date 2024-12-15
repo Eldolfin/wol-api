@@ -72,7 +72,13 @@ impl Machine {
             .map(|res| res.status.success())
         {
             Ok(true) => State::On,
-            _ => State::Off,
+            _ => {
+                if self.state == State::PendingOn {
+                    State::PendingOn
+                } else {
+                    State::Off
+                }
+            }
         };
     }
     fn ssh(&self) -> Command {

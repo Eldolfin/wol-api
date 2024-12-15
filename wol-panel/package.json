@@ -9,11 +9,15 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "generate:api-spec": "curl -o ./node_modules/api-doc.json http://localhost:3030/api/api-doc.json && openapi-typescript ./node_modules/api-doc.json -o ./src/lib/api/v1.d.ts",
-    "fmt": "prettier --ignore-path src/lib/api/v1.d.ts -w src"
+    "fmt": "prettier --ignore-path src/lib/api/v1.d.ts -w src",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@nuxt/eslint": "0.7.3",
     "@vicons/ionicons5": "^0.12.0",
     "@vueuse/nuxt": "12.0.0",
+    "eslint": "^8.57.0 || ^9.0.0",
     "nuxt": "^3.14.1592",
     "nuxtjs-naive-ui": "1.0.2",
     "openapi-fetch": "^0.13.3",

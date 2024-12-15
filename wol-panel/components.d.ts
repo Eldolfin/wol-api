@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Machine_list: typeof import('./src/components/machine_list.vue')['default']
+    MachineCard: typeof import('./src/components/MachineCard.vue')['default']
     MachineList: typeof import('./src/components/MachineList.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
     NButton: typeof import('naive-ui')['NButton']

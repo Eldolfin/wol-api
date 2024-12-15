@@ -7,7 +7,13 @@ export default defineNuxtConfig({
   ssr: false,
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
-  modules: ["nuxtjs-naive-ui", "@vueuse/nuxt"],
+  modules: ["nuxtjs-naive-ui", "@vueuse/nuxt", "@nuxt/eslint"],
+  eslint: {
+    checker: true,
+    config: {
+      stylistic: true,
+    },
+  },
   vite: {
     plugins: [
       AutoImport({
