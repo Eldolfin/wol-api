@@ -45,8 +45,9 @@ impl StoreInner {
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Machine {
-    config: config::Machine,
+    config: config::MachineCfg,
     state: State,
+    #[schema(example = "computer1")]
     name: String,
 }
 
@@ -72,6 +73,7 @@ impl Machine {
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, ToSchema, Default)]
 #[serde(rename_all = "snake_case")]
+#[schema(example = "on")]
 pub enum State {
     #[default]
     Unknown,

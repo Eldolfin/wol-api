@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
-pub struct Machine {
+pub struct MachineCfg {
     #[schema(example = "192.168.1.4")]
     pub ip: String,
     #[schema(example = "f4:93:9f:eb:56:a8")]
@@ -12,5 +12,5 @@ pub struct Machine {
 
 #[derive(ToSchema, Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
-    pub machines: HashMap<String, Machine>,
+    pub machines: HashMap<String, MachineCfg>,
 }

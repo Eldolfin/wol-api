@@ -24,7 +24,7 @@ pub struct Api;
     get,
     path = "/list",
     responses(
-        (status = 200, description = "List machines successfully", body = Config)
+        (status = 200, description = "List machines successfully", body = StoreInner)
     )
 )]
 pub async fn list(store: Store) -> Result<Box<dyn Reply>, Infallible> {
