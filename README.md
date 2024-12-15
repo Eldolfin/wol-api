@@ -21,3 +21,10 @@
 
 rewrite of this in rust 🦀
 https://github.com/rix1337/WakeOnLAN-API/blob/main/wol_api/run.py
+
+## Similar projects
+
+- https://github.com/seriousm4x/UpSnap
+  Looks feature complete, beatifull ui, database, crud machine management, auto discovery and more
+- https://github.com/Misterbabou/gptwol
+  Simple, similar ui, not many features
