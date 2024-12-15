@@ -1,12 +1,13 @@
 use super::wol;
 use crate::config;
+use anyhow::Context;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::{sync, time::Duration};
 use tokio::{process::Command, sync::Mutex};
 use utoipa::ToSchema;
 
-pub type Store = std::sync::Arc<Mutex<StoreInner>>;
+pub type Store = sync::Arc<Mutex<StoreInner>>;
 
 pub const TIME_BEFORE_ASSUMING_WOL_FAILED: Duration = Duration::from_secs(60);
 
@@ -36,6 +37,7 @@ impl StoreInner {
                 config: config.clone(),
                 state: State::default(),
                 name: name.to_owned(),
+                tasks: Vec::new(),
             })
             .collect();
         Self { machines }
@@ -56,6 +58,7 @@ pub struct Machine {
     pub state: State,
     #[schema(example = "computer1")]
     pub name: String,
+    pub tasks: Vec<Task>,
 }
 
 impl Machine {
@@ -80,6 +83,7 @@ impl Machine {
                 }
             }
         };
+        if self.state == State::On { self.flush_tasks().await }
     }
     fn ssh(&self) -> Command {
         debug!(
@@ -134,6 +138,24 @@ impl Machine {
             Err(e) => Err(e.to_string()),
         }
     }
+
+    pub fn push_task(&mut self, task: Task) {
+        debug!("Pushing task {:?}, to {:?}", task, self);
+        self.tasks.push(task);
+    }
+
+    async fn flush_tasks(&mut self)   {
+        let mut errors = Vec::new(); // TODO: report them somehow
+        while let Some(task) = self.tasks.pop() {
+            let res = task
+                .execute(self)
+                .await
+                .with_context(|| format!("Failed to execute task {:?}", task));
+            if let Err(err) = res {
+                errors.push(err);
+            }
+        }
+    }
 }
 
 #[derive(
@@ -159,4 +181,19 @@ pub enum State {
     Off,
     PendingOn,
     PendingOff,
+}
+
+#[derive(Clone,Copy, Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Task {
+    id: usize,
+}
+impl Task {
+    async fn execute(&self, on: &Machine) -> anyhow::Result<()> {
+        let res = on.ssh().args(&on.config.tasks[self.id].command).output().await?;
+        if !res.status.success() {
+            anyhow::bail!("stderr: {}\nstdout: {}\nreturn code: {}", String::from_utf8(res.stderr).unwrap(), String::from_utf8(res.stdout).unwrap(), res.status);
+        }
+        Ok(())
+    }
 }

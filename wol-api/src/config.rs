@@ -13,6 +13,8 @@ pub struct MachineCfg {
     #[schema(example = 22)]
     #[serde(default = "default_ssh_port")]
     pub ssh_port: u16,
+    #[serde(default)]
+    pub tasks: Vec<TaskCfg>,
 }
 
 fn default_ssh_port() -> u16 {
@@ -23,4 +25,17 @@ fn default_ssh_port() -> u16 {
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub machines: HashMap<String, MachineCfg>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct TaskCfg {
+    #[schema(example = "[\"echo\", \"hello\", \"world\"]")]
+    pub command: Vec<String>,
+    #[schema(
+        example = "https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png"
+    )]
+    pub icon_url: String,
+    #[schema(example = "Say hello world")]
+    pub name: String,
 }

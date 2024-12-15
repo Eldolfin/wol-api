@@ -1,4 +1,4 @@
-use super::service::{State, Store, StoreInner, TIME_BEFORE_ASSUMING_WOL_FAILED};
+use super::service::{State, Store, StoreInner, Task, TIME_BEFORE_ASSUMING_WOL_FAILED};
 use crate::config::Config;
 
 use core::convert::Infallible;
@@ -7,16 +7,13 @@ use std::{sync::Arc, time::Duration};
 use tokio::{sync::Mutex, time};
 use utoipa::OpenApi;
 use warp::{
-    http,
-    reject::Rejection,
-    reply::{self, Reply},
-    Filter,
+    body::json, http, reject::Rejection, reply::{self, Reply}, Filter
 };
 
 const MACHINE_REFRESH_INTERVAL: time::Duration = Duration::from_secs(10);
 
 #[derive(OpenApi)]
-#[openapi(paths(list, wake, shutdown))]
+#[openapi(paths(list, wake, shutdown, task))]
 pub struct Api;
 
 #[utoipa::path(
@@ -60,6 +57,22 @@ pub async fn shutdown(
         machine.shutdown(dry_run).await,
         StatusCode::OK,
     )))
+}
+
+#[utoipa::path(
+    post,
+    path = "/{name}/task",
+    responses(
+        (status = 200, description = "Task added to the queue successfully"),
+    ),
+    request_body = Task,
+    params(
+        ("name" = String, Path, description = "Name of the machine to run the task on")
+    ),
+)]
+pub async fn task(store: Arc<Mutex<StoreInner>>, name: String, dry_run: bool, task: Task) -> Result<impl Reply, Infallible> {
+    store.lock().await.by_name_mut(&name).expect("TODO: send 404").push_task(task);
+    Ok("Task queued successfully")
 }
 
 #[utoipa::path(
@@ -124,6 +137,12 @@ pub fn handlers(
         warp::path!(String / "shutdown")
             .and_then(move |name: String| shutdown(store.clone(), name, dry_run))
     };
+    let task = {
+        let store = store.clone();
+        warp::path!(String / "task")
+            .and(json())
+            .and_then(move |name, body: Task| task(store.clone(), name, dry_run, body))
+    };
 
     {
         let store = store.clone();
@@ -135,5 +154,6 @@ pub fn handlers(
         });
     }
 
-    list.or(wake).or(shutdown)
+    list.or(wake).or(shutdown).or(task)
 }
+
