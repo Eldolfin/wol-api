@@ -1,12 +1,14 @@
+use super::wol;
 use crate::config;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::time::Duration;
 use tokio::{process::Command, sync::Mutex};
 use utoipa::ToSchema;
-use super::wol;
 
-pub type Store = Arc<Mutex<StoreInner>>;
+pub type Store = std::sync::Arc<Mutex<StoreInner>>;
+
+pub const TIME_BEFORE_ASSUMING_WOL_FAILED: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct StoreInner {
@@ -57,7 +59,7 @@ pub struct Machine {
 }
 
 impl Machine {
-    async fn update_state(&mut self) {
+    pub async fn update_state(&mut self) {
         debug!("Checking state for {}", self.name);
         self.state = match self
             .ssh()
@@ -94,8 +96,7 @@ impl Machine {
         let mut cmd = self.ssh();
         cmd.arg("sudo")
             // .arg("systemctl").arg("poweroff")
-            .arg("poweroff")
-        ;
+            .arg("poweroff");
         info!("Shutting down machine '{}'", self.name);
         debug!(
             "Running command: {:?}{}",
@@ -116,17 +117,33 @@ impl Machine {
     pub fn wake(&mut self, dry_run: bool) -> Result<String, String> {
         info!(
             "Sending wake on lan to {} (mac = {})",
-            self.name,self.config.mac.to_uppercase()
+            self.name,
+            self.config.mac.to_uppercase()
         );
         self.state = State::PendingOn;
-        match wol::send(&self.config.mac, dry_run) {
+
+        let send = wol::send(&self.config.mac, dry_run);
+        match send {
             Ok(()) => Ok("Sent wake on lan successfully".to_owned()),
             Err(e) => Err(e.to_string()),
         }
     }
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, ToSchema, Default)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Serialize,
+    Deserialize,
+    ToSchema,
+    Default,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    Eq,
+    Hash,
+)]
 #[serde(rename_all = "snake_case")]
 #[schema(example = "on")]
 pub enum State {
