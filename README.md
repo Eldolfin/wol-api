@@ -17,6 +17,7 @@
 - [ ]: nix service agent
 - [ ]: launch apps/games with icons. (config entry with icon url and command to
   run)
+  - [ ]: run command once health check succeed 
 
 rewrite of this in rust 🦀
 https://github.com/rix1337/WakeOnLAN-API/blob/main/wol_api/run.py
