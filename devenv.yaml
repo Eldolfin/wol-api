@@ -2,3 +2,6 @@
 inputs:
   nixpkgs:
     url: github:NixOS/nixpkgs/nixos-unstable
+
+imports:
+ - ./wol-panel

@@ -9,7 +9,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "generate:api-spec": "curl -o ./node_modules/api-doc.json http://localhost:3030/api/api-doc.json && openapi-typescript ./node_modules/api-doc.json -o ./src/lib/api/v1.d.ts",
-    "fmt": "prettier --ignore-path src/lib/api/v1.d.ts -w src",
+    "fmt": "prettier --ignore-path src/lib/api/v1.d.ts -w .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -34,6 +34,7 @@
     "unplugin-auto-import": "^0.18.6",
     "unplugin-vue-components": "^0.27.5",
     "vfonts": "^0.0.3",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vite-plugin-eslint2": "^5.0.3"
   }
 }

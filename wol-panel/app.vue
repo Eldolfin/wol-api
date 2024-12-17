@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import WolPanel from "./src/main.vue";
 import { darkTheme } from 'naive-ui'
-
-
+import WolPanel from './src/main.vue'
 </script>
 
 <template>

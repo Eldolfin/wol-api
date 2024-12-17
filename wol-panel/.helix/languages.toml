@@ -13,3 +13,8 @@ languages = ["vue"]
 command = "node_modules/@vue/language-server/bin/vue-language-server.js"
 args = ["--stdio"]
 config = { typescript = { tsdk = "node_modules/typescript/lib/" } }
+
+[[language]]
+name = "typescript"
+auto-format = true
+formatter = { command = "prettier", args = ["--parser", "typescript"] }
