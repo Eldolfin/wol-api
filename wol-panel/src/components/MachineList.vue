@@ -6,7 +6,6 @@ const api = inject(api_client)!;
 
 const {
   data,
-  status,
   refresh: refresh_computers,
   error,
 } = useAsyncData("computer-list", () =>
@@ -31,10 +30,11 @@ useIntervalFn(async () => await refresh_computers(), 1000);
     <template #header> Machines </template>
     <template v-if="data">
       <n-list-item
-        v-for="(machine, i) in machines"
+        v-for="i in machines!.length"
+        :key="i"
         style="width: calc(100vw - 10px * 2)"
       >
-        <MachineCard v-model:machine="machines![i]" />
+        <MachineCard v-model:machine="machines![i - 1]" />
       </n-list-item>
     </template>
     <!-- <template v-else-if="status == 'idle'"> Loading... </template> -->
