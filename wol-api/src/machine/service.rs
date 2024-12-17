@@ -3,13 +3,15 @@ use crate::config;
 use anyhow::Context;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
-use std::{sync, time::Duration};
+use std::{
+    net::IpAddr,
+    sync::{self, Arc},
+    time::Duration,
+};
 use tokio::{process::Command, sync::Mutex};
 use utoipa::ToSchema;
 
 pub type Store = sync::Arc<Mutex<StoreInner>>;
-
-pub const TIME_BEFORE_ASSUMING_WOL_FAILED: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct StoreInner {
@@ -29,18 +31,13 @@ impl StoreInner {
             .find(|machine| machine.name == name)
     }
 
-    pub fn new(config: &config::Config) -> Self {
-        let machines = config
+    pub fn new(config: &config::Config) -> anyhow::Result<Self> {
+        let machines: anyhow::Result<Vec<Machine>> = config
             .machines
             .iter()
-            .map(|(name, config)| Machine {
-                config: config.clone(),
-                state: State::default(),
-                name: name.to_owned(),
-                tasks: Vec::new(),
-            })
+            .map(|(name, config)| Machine::new(config, name))
             .collect();
-        Self { machines }
+        Ok(Self { machines: machines? })
     }
 
     pub async fn refresh_machine_state(&mut self) {
@@ -59,31 +56,40 @@ pub struct Machine {
     #[schema(example = "computer1")]
     pub name: String,
     pub tasks: Vec<Task>,
+    #[serde(skip_serializing)]
+    ip: IpAddr,
 }
 
 impl Machine {
-    pub async fn update_state(&mut self) {
+    pub async fn update_state(&mut self)  {
         debug!("Checking state for {}", self.name);
-        self.state = match self
-            .ssh()
-            // .arg("systemctl")
-            // .arg("is-system-running")
-            // .arg("--wait")
-            .args(["echo", "ok"])
-            .output()
-            .await
-            .map(|res| res.status.success())
-        {
-            Ok(true) => State::On,
-            _ => {
-                if self.state == State::PendingOn {
-                    State::PendingOn
-                } else {
-                    State::Off
-                }
-            }
-        };
-        if self.state == State::On { self.flush_tasks().await }
+
+        let ping_res = ping_rs::send_ping_async(
+            &self.ip,
+            Duration::from_secs(1),
+            Arc::new(&[1,2,3,4]),
+            None,
+        )
+        .await.is_ok();
+
+        if !(ping_res && self.state == State::On) {
+            let res = ping_res && self
+                .ssh()
+                .args(["echo", "ok"])
+                .output()
+                .await
+                .map(|res| res.status.success()).is_ok();
+            self.state = match (res,ping_res, self.state) {
+                (true, _, _) => State::On,
+                (false, false, _) => State::Off,
+                (false, true, State::On | State::Unknown | State::PendingOff) => State::PendingOff,
+                (false, true, State::Off | State::PendingOn) => State::PendingOn,
+            };
+        }
+
+        if self.state == State::On {
+            self.flush_tasks().await;
+        }
     }
     fn ssh(&self) -> Command {
         debug!(
@@ -120,8 +126,7 @@ impl Machine {
             };
             debug!("Command output: {:?}", &output);
         }
-        self.state = State::Off;
-        "Shutdown machine successfully".to_owned()
+        "Send shutdown command to machine successfully".to_owned()
     }
 
     pub fn wake(&mut self, dry_run: bool) -> Result<String, String> {
@@ -144,17 +149,31 @@ impl Machine {
         self.tasks.push(task);
     }
 
-    async fn flush_tasks(&mut self)   {
+    async fn flush_tasks(&mut self) {
+        #[allow(clippy::collection_is_never_read)]
         let mut errors = Vec::new(); // TODO: report them somehow
         while let Some(task) = self.tasks.pop() {
             let res = task
                 .execute(self)
                 .await
-                .with_context(|| format!("Failed to execute task {:?}", task));
+                .with_context(|| format!("Failed to execute task {task:?}"));
             if let Err(err) = res {
                 errors.push(err);
             }
         }
+    }
+
+    fn new(config: &config::MachineCfg, name: &str) -> anyhow::Result<Self> {
+        Ok(Self {
+            config: config.to_owned(),
+            name: name.to_owned(),
+            ip: config
+                .ip
+                .parse()
+                .with_context(|| format!("Could not parse '{name}' ip"))?,
+            state: State::default(),
+            tasks: Vec::new(),
+        })
     }
 }
 
@@ -183,16 +202,25 @@ pub enum State {
     PendingOff,
 }
 
-#[derive(Clone,Copy, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Task {
     id: usize,
 }
 impl Task {
     async fn execute(&self, on: &Machine) -> anyhow::Result<()> {
-        let res = on.ssh().args(&on.config.tasks[self.id].command).output().await?;
+        let res = on
+            .ssh()
+            .args(&on.config.tasks[self.id].command)
+            .output()
+            .await?;
         if !res.status.success() {
-            anyhow::bail!("stderr: {}\nstdout: {}\nreturn code: {}", String::from_utf8(res.stderr).unwrap(), String::from_utf8(res.stdout).unwrap(), res.status);
+            anyhow::bail!(
+                "stderr: {}\nstdout: {}\nreturn code: {}",
+                String::from_utf8(res.stderr).unwrap(),
+                String::from_utf8(res.stdout).unwrap(),
+                res.status
+            );
         }
         Ok(())
     }

@@ -9,13 +9,11 @@ use std::{
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use warp::{reply, Filter};
-use wol_relay_server::{config::Config, machine};
+use wol_relay_server::{config::Config, machine, consts::API_PATH};
 
 use anyhow::Context as _;
 use clap::Parser;
 use log::debug;
-
-const API_PATH: &str = "/api";
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -70,7 +68,7 @@ async fn main() -> anyhow::Result<()> {
         .and(warp::get())
         .map(|| reply::html(RapiDoc::new("/api/api-doc.json").to_html()));
 
-    let machine_api = warp::path("machine").and(machine::api::handlers(&config, args.dry_run));
+    let machine_api = warp::path("machine").and(machine::api::handlers(&config, args.dry_run)?);
 
     // let cors = warp::cors().allow_origin("http://localhost:3000").allow_methods(vec!["GET", "POST"]);
     let cors = warp::cors().allow_any_origin();

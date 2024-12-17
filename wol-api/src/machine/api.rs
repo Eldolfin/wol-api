@@ -1,5 +1,5 @@
-use super::service::{State, Store, StoreInner, Task, TIME_BEFORE_ASSUMING_WOL_FAILED};
-use crate::config::Config;
+use super::service::{State, Store, StoreInner, Task};
+use crate::{config::Config, consts::{MACHINE_REFRESH_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED}};
 
 use core::convert::Infallible;
 use http::status::StatusCode;
@@ -7,10 +7,13 @@ use std::{sync::Arc, time::Duration};
 use tokio::{sync::Mutex, time};
 use utoipa::OpenApi;
 use warp::{
-    body::json, http, reject::Rejection, reply::{self, Reply}, Filter
+    body::json,
+    http,
+    reject::Rejection,
+    reply::{self, Reply},
+    Filter,
 };
 
-const MACHINE_REFRESH_INTERVAL: time::Duration = Duration::from_secs(10);
 
 #[derive(OpenApi)]
 #[openapi(paths(list, wake, shutdown, task))]
@@ -70,8 +73,18 @@ pub async fn shutdown(
         ("name" = String, Path, description = "Name of the machine to run the task on")
     ),
 )]
-pub async fn task(store: Arc<Mutex<StoreInner>>, name: String, dry_run: bool, task: Task) -> Result<impl Reply, Infallible> {
-    store.lock().await.by_name_mut(&name).expect("TODO: send 404").push_task(task);
+pub async fn task(
+    store: Arc<Mutex<StoreInner>>,
+    name: String,
+    dry_run: bool,
+    task: Task,
+) -> Result<impl Reply, Infallible> {
+    store
+        .lock()
+        .await
+        .by_name_mut(&name)
+        .expect("TODO: send 404")
+        .push_task(task);
     Ok("Task queued successfully")
 }
 
@@ -117,8 +130,8 @@ pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn R
 pub fn handlers(
     config: &Config,
     dry_run: bool,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    let store = Arc::new(Mutex::new(StoreInner::new(config)));
+) -> anyhow::Result<impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone> {
+    let store = Arc::new(Mutex::new(StoreInner::new(config)?));
 
     let list = {
         let store = store.clone();
@@ -154,6 +167,5 @@ pub fn handlers(
         });
     }
 
-    list.or(wake).or(shutdown).or(task)
+    Ok(list.or(wake).or(shutdown).or(task))
 }
-

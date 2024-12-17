@@ -21,6 +21,7 @@ serde = { version = "1.0.215", features = ["serde_derive"] }
 serde_json = "1.0.133"
 utoipa = "5.2.0"
 utoipa-rapidoc = "5.0.0"
+ping-rs = "0.1.2"
 
 
 [lints.clippy]
