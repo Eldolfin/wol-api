@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/machine/{name}/task": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["task"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/machine/{name}/wake": {
         parameters: {
             query?: never;
@@ -61,6 +77,7 @@ export interface components {
             /** @example computer1 */
             name: string;
             state: components["schemas"]["State"];
+            tasks: components["schemas"]["Task"][];
         };
         MachineCfg: {
             /** @example 192.168.1.4 */
@@ -72,6 +89,7 @@ export interface components {
              * @example 22
              */
             "ssh-port"?: number;
+            tasks?: components["schemas"]["TaskCfg"][];
         };
         /**
          * @example on
@@ -80,6 +98,17 @@ export interface components {
         State: "unknown" | "on" | "off" | "pending_on" | "pending_off";
         StoreInner: {
             machines: components["schemas"]["Machine"][];
+        };
+        Task: {
+            id: number;
+        };
+        TaskCfg: {
+            /** @example ["echo", "hello", "world"] */
+            command: string[];
+            /** @example https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png */
+            icon_url: string;
+            /** @example Say hello world */
+            name: string;
         };
     };
     responses: never;
@@ -131,6 +160,31 @@ export interface operations {
             };
             /** @description Machine does not exist */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    task: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Name of the machine to run the task on */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Task"];
+            };
+        };
+        responses: {
+            /** @description Task added to the queue successfully */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

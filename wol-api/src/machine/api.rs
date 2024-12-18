@@ -47,19 +47,19 @@ pub async fn shutdown(
     store: Store,
     name: String,
     dry_run: bool,
-) -> Result<Box<dyn Reply>, Infallible> {
+) -> Result<impl Reply, Infallible> {
     let mut lock = store.lock().await;
     let Some(machine) = lock.by_name_mut(&name) else {
-        return Ok(Box::new(reply::with_status(
-            "Machine does not exist",
+        return Ok(reply::with_status(
+            "Machine does not exist".to_owned(),
             http::StatusCode::NOT_FOUND,
-        )));
+        ));
     };
 
-    Ok(Box::new(reply::with_status(
+    Ok(reply::with_status(
         machine.shutdown(dry_run).await,
         StatusCode::OK,
-    )))
+    ))
 }
 
 #[utoipa::path(
@@ -79,14 +79,15 @@ pub async fn task(
     dry_run: bool,
     task: Task,
 ) -> Result<impl Reply, Infallible> {
-    let res = store
-        .lock()
-        .await
-        .by_name_mut(&name)
-        .expect("TODO: send 404")
-        .push_task(task, dry_run);
-    match res {
-        Ok(msg) =>  Ok(reply::with_status(msg.to_owned(), StatusCode::OK)),
+    let mut lock = store.lock().await;
+    let Some(machine) = lock.by_name_mut(&name) else {
+        return Ok(reply::with_status(
+            "Machine does not exist".to_owned(),
+            http::StatusCode::NOT_FOUND,
+        ));
+    };
+    match machine.push_task(task, dry_run) {
+        Ok(msg) =>  Ok(reply::with_status(msg, StatusCode::OK)),
         Err(msg) =>  Ok( reply::with_status(msg, StatusCode::INTERNAL_SERVER_ERROR) )
     }
 }

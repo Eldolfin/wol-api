@@ -7,7 +7,6 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    Machine_list: typeof import('./src/components/machine_list.vue')['default']
     MachineCard: typeof import('./src/components/MachineCard.vue')['default']
     MachineList: typeof import('./src/components/MachineList.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
@@ -15,15 +14,14 @@ declare module 'vue' {
     NButtonGroup: typeof import('naive-ui')['NButtonGroup']
     NCard: typeof import('naive-ui')['NCard']
     NConfigProvider: typeof import('naive-ui')['NConfigProvider']
-    NH1: typeof import('naive-ui')['NH1']
     NH2: typeof import('naive-ui')['NH2']
     NIcon: typeof import('naive-ui')['NIcon']
-    NIconWrapper: typeof import('naive-ui')['NIconWrapper']
+    NImage: typeof import('naive-ui')['NImage']
     NList: typeof import('naive-ui')['NList']
     NListItem: typeof import('naive-ui')['NListItem']
-    NSkeleton: typeof import('naive-ui')['NSkeleton']
     NSpace: typeof import('naive-ui')['NSpace']
     NSwitch: typeof import('naive-ui')['NSwitch']
+    NTemplate: typeof import('naive-ui')['NTemplate']
     NText: typeof import('naive-ui')['NText']
     NThing: typeof import('naive-ui')['NThing']
     RouterLink: typeof import('vue-router')['RouterLink']

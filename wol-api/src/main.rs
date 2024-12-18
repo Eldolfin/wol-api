@@ -71,7 +71,11 @@ async fn main() -> anyhow::Result<()> {
     let machine_api = warp::path("machine").and(machine::api::handlers(&config, args.dry_run)?);
 
     // let cors = warp::cors().allow_origin("http://localhost:3000").allow_methods(vec!["GET", "POST"]);
-    let cors = warp::cors().allow_any_origin();
+    // let cors = warp::cors().allow_any_origin().allow_methods(["GET", "POST", "OPTIONS"]);
+   let cors = warp::cors().allow_any_origin()
+        .allow_headers(vec!["Access-Control-Allow-Headers", "Access-Control-Request-Method", "Access-Control-Request-Headers", "Origin", "Accept", "X-Requested-With", "Content-Type"])
+        .allow_methods(["GET", "POST", "OPTIONS"]);
+
     let routes = api_doc.or(rapidoc_handler).or(machine_api).with(cors);
     let routes = warp::path(API_PATH.strip_prefix("/").unwrap()).and(routes);
 

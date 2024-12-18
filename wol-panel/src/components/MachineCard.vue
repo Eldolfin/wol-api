@@ -2,8 +2,9 @@
 import { useThemeVars } from "naive-ui";
 import type { components } from "../lib/api/v1";
 import { unreachable } from "../lib/utils/rust";
-import { Power, Stop } from "@vicons/ionicons5";
+import { Power } from "@vicons/ionicons5";
 import { api_client } from "../provides";
+import { ImageOutline as ImageOutlineIcon } from "@vicons/ionicons5";
 
 const machine = defineModel<components["schemas"]["Machine"]>("machine", {
   required: true,
@@ -59,6 +60,17 @@ function handleSwitchMachineState(newState: boolean) {
   }
 }
 
+function handleQueueTask(taskId: number) {
+  api.POST("/api/machine/{name}/task", {
+    params: {
+      path: {
+        name: machine.value.name,
+      },
+    },
+    body: { id: taskId },
+  });
+}
+
 function capitalize(s: string): string {
   return String(s[0]).toUpperCase() + String(s).slice(1);
 }
@@ -109,19 +121,29 @@ const avatar_color = computed(() => {
         {{ `mac: ${machine.config.mac}` }}
       </template>
       <template #action>
-        <n-switch
-          size="large"
-          :loading="button_blocked"
-          :value="machine.state === 'on'"
-          @update:value="handleSwitchMachineState"
-        >
-          <template #checked-icon>
-            <n-icon :component="Stop" />
-          </template>
-          <template #unchecked-icon>
-            <n-icon :component="Power" />
-          </template>
-        </n-switch>
+        <n-button-group>
+          <n-space size="small">
+            <n-switch
+              size="large"
+              :loading="button_blocked"
+              :value="machine.state === 'on'"
+              @update:value="handleSwitchMachineState"
+            >
+            </n-switch>
+            <n-button
+              v-for="(task, i) in machine.config.tasks"
+              @click="handleQueueTask(i)"
+            >
+              <n-image width="30" :src="task.icon_url" preview-disabled>
+                <template #error>
+                  <n-icon :size="30" color="lightGrey">
+                    <ImageOutlineIcon />
+                  </n-icon>
+                </template>
+              </n-image>
+            </n-button>
+          </n-space>
+        </n-button-group>
       </template>
     </n-thing>
   </n-card>
