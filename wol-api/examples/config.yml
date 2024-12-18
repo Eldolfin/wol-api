@@ -5,4 +5,7 @@ machines:
     tasks:
       - name: Open Satisfactory
         icon_url: "https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png"
-        command: ["steam", "steam://rungameid/526870"]
+        command: ["DISPLAY=:0 steam steam://rungameid/526870"]
+      - name: Rick roll
+        icon_url: "TODO"
+        command: ["DISPLAY=:0 mpv --no-resume-playback -fs --fs-screen=1 'https://youtu.be/dQw4w9WgXcQ' & DISPLAY=:0 mpv --no-resume-playback -fs --fs-screen=0 --mute=yes 'https://youtu.be/dQw4w9WgXcQ' &"]
