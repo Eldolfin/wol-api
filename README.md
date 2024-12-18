@@ -10,6 +10,7 @@
 - [x]: docker ~compose~ stack deployment
 - [x]: deploy on rpi
 - [x]: auto deploy on push
+- [ ]: xterm ssh access option
 - [ ]: connect vdi button
 - [x]: launch apps/games with icons. (config entry with icon url and command to
   run)
