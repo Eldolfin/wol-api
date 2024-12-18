@@ -8,4 +8,4 @@ machines:
         command: ["DISPLAY=:0 steam steam://rungameid/526870"]
       - name: Rick roll
         icon_url: "https://lh3.googleusercontent.com/JV4zj1L5NT1RBjs8Miz_HpkywVPw8Q0IVlNccTGkjqagAw8zmnn5LFP5PUU1lL1vX6alOFYMXbcy1Orq_x199m8MBA=s128-rj-sc0x00ffffff"
-        command: ["DISPLAY=:0 mpv --no-resume-playback -fs --fs-screen=1 'https://youtu.be/dQw4w9WgXcQ' & DISPLAY=:0 mpv --no-resume-playback -fs --fs-screen=0 --mute=yes 'https://youtu.be/dQw4w9WgXcQ' &"]
+        command: ["pamixer --set-volume 100 & DISPLAY=:0 mpv --no-resume-playback -fs --fs-screen=1 'https://youtu.be/dQw4w9WgXcQ' & DISPLAY=:0 mpv --no-resume-playback -fs --fs-screen=2 --mute=yes 'https://youtu.be/dQw4w9WgXcQ' &"]
