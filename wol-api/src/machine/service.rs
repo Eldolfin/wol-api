@@ -81,6 +81,7 @@ impl Machine {
                 .map(|res| res.status.success()).is_ok();
             self.state = match (res,ping_res, self.state) {
                 (true, _, _) => State::On,
+                (false, false, State::PendingOn) => State::PendingOn,
                 (false, false, _) => State::Off,
                 (false, true, State::On | State::Unknown | State::PendingOff) => State::PendingOff,
                 (false, true, State::Off | State::PendingOn) => State::PendingOn,
