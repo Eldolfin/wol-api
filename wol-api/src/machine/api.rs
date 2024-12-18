@@ -79,13 +79,16 @@ pub async fn task(
     dry_run: bool,
     task: Task,
 ) -> Result<impl Reply, Infallible> {
-    store
+    let res = store
         .lock()
         .await
         .by_name_mut(&name)
         .expect("TODO: send 404")
-        .push_task(task);
-    Ok("Task queued successfully")
+        .push_task(task, dry_run);
+    match res {
+        Ok(msg) =>  Ok(reply::with_status(msg.to_owned(), StatusCode::OK)),
+        Err(msg) =>  Ok( reply::with_status(msg, StatusCode::INTERNAL_SERVER_ERROR) )
+    }
 }
 
 #[utoipa::path(

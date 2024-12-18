@@ -144,9 +144,18 @@ impl Machine {
         }
     }
 
-    pub fn push_task(&mut self, task: Task) {
-        debug!("Pushing task {:?}, to {:?}", task, self);
+    pub fn push_task(&mut self, task: Task, dry_run: bool) -> Result<String, String> {
+        if task.id >= self.config.tasks.len() {
+            return Err(format!("Task id {} is out of bound for machine {} which has {} tasks", task.id, self.name, self.tasks.len()));
+        }
+        let name = self.config.tasks[task.id].name.clone();
+        debug!("Pushing task {}, to {}", name, self.name);
         self.tasks.push(task);
+        if self.state == State::Off {
+            let res = self.wake(dry_run)?;
+            debug!("Push task: wake on lan result: {res}");
+        }
+        Ok(format!("Pushed task '{name}' successfully"))
     }
 
     async fn flush_tasks(&mut self) {
