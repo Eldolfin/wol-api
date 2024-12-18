@@ -1,6 +1,6 @@
 # Wake on lan relay api
 
-## TODO:
+## Initial goals:
 
 - [x]: Rust part, web server, wol and cli/config
 - [x]: integration in dashboard or something
@@ -11,12 +11,11 @@
 - [x]: deploy on rpi
 - [x]: auto deploy on push
 - [ ]: connect vdi button
-- [ ]: launch apps/games with icons. (config entry with icon url and command to
+- [x]: launch apps/games with icons. (config entry with icon url and command to
   run)
-  - [ ]: run command once health check succeed
 - [ ]: config for running arbitrary command 'actions' on host/machine
 - [ ]: machine agent reporting state + monitoring stats (cpu, memory, uptime/last online)
-  - [ ]: can also be used as an alternative to sshing
+  - [ ]: can also be used as an alternative to ping/ssh
 - [ ]: nix service agent
 - [ ]: nixos package and nix ci
 - [ ]: nixos module with a systemd service
