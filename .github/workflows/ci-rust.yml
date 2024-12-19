@@ -23,3 +23,5 @@ jobs:
         run: cd wol-api && cargo clippy -q --message-format=json | cargo-action-fmt
       - name: Run cargo format
         run: cd wol-api && cargo fmt --check
+      - name: Run cargo test
+        run: cd wol-api && cargo test
