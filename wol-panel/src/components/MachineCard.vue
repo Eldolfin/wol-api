@@ -2,9 +2,8 @@
 import { useThemeVars } from "naive-ui";
 import type { components } from "../lib/api/v1";
 import { unreachable } from "../lib/utils/rust";
-import { Power } from "@vicons/ionicons5";
+import { Power, ImageOutline as ImageOutlineIcon } from "@vicons/ionicons5";
 import { api_client } from "../provides";
-import { ImageOutline as ImageOutlineIcon } from "@vicons/ionicons5";
 
 const machine = defineModel<components["schemas"]["Machine"]>("machine", {
   required: true,
@@ -128,10 +127,10 @@ const avatar_color = computed(() => {
               :loading="button_blocked"
               :value="machine.state === 'on'"
               @update:value="handleSwitchMachineState"
-            >
-            </n-switch>
+            />
             <n-button
               v-for="(task, i) in machine.config.tasks"
+              :key="i"
               @click="handleQueueTask(i)"
             >
               <n-image width="30" :src="task.icon_url" preview-disabled>

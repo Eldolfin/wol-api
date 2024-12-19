@@ -1,10 +1,4 @@
-{
-  pkgs,
-  lib,
-  config,
-  inputs,
-  ...
-}: {
+{pkgs, ...}: {
   dotenv.disableHint = true;
   packages = [
     pkgs.yarn
@@ -30,8 +24,6 @@
     git --version | grep --color=auto "${pkgs.git.version}"
   '';
 
-  # https://devenv.sh/pre-commit-hooks/
-  # pre-commit.hooks.shellcheck.enable = true;
-
-  # See full reference at https://devenv.sh/reference/options/
+  pre-commit.hooks.eslint.enable = true;
+  pre-commit.hooks.prettier.enable = true;
 }
