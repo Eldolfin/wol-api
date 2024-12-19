@@ -3,7 +3,7 @@ use crate::{config::Config, consts::{MACHINE_REFRESH_INTERVAL, TIME_BEFORE_ASSUM
 
 use core::convert::Infallible;
 use http::status::StatusCode;
-use std::{sync::Arc, time::Duration};
+use std::{sync::Arc};
 use tokio::{sync::Mutex, time};
 use utoipa::OpenApi;
 use warp::{
@@ -73,6 +73,7 @@ pub async fn shutdown(
         ("name" = String, Path, description = "Name of the machine to run the task on")
     ),
 )]
+#[allow(clippy::significant_drop_tightening)]
 pub async fn task(
     store: Arc<Mutex<StoreInner>>,
     name: String,
