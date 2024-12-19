@@ -25,6 +25,10 @@ ping-rs = "0.1.2"
 inotify = "0.11.0"
 rstest = "0.23.0"
 
+[dev-dependencies]
+serde_yaml = "0.9.34"
+tempfile = "3.14.0"
+
 
 [lints.clippy]
 all = { level = "deny", priority = -1 }
@@ -78,3 +82,4 @@ infinite_loop = "allow"
 exhaustive_enums = "allow"
 tests_outside_test_module = "allow"
 multiple_crate_versions = "allow"
+panic_in_result_fn = "allow"

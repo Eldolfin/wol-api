@@ -57,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
     debug!("{args:?}");
 
     let config: Config = Figment::new()
-        .merge(Yaml::file(args.config_path))
+        .merge(Yaml::file(&args.config_path))
         .extract()
         .context("Failed to parse config file")?;
 
