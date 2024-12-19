@@ -9,7 +9,7 @@ use std::{
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use warp::{reply, Filter};
-use wol_relay_server::{config::Config, machine, consts::API_PATH};
+use wol_relay_server::{config::Config, consts::API_PATH, machine};
 
 use anyhow::Context as _;
 use clap::Parser;
@@ -72,8 +72,17 @@ async fn main() -> anyhow::Result<()> {
 
     // let cors = warp::cors().allow_origin("http://localhost:3000").allow_methods(vec!["GET", "POST"]);
     // let cors = warp::cors().allow_any_origin().allow_methods(["GET", "POST", "OPTIONS"]);
-   let cors = warp::cors().allow_any_origin()
-        .allow_headers(vec!["Access-Control-Allow-Headers", "Access-Control-Request-Method", "Access-Control-Request-Headers", "Origin", "Accept", "X-Requested-With", "Content-Type"])
+    let cors = warp::cors()
+        .allow_any_origin()
+        .allow_headers(vec![
+            "Access-Control-Allow-Headers",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+            "Origin",
+            "Accept",
+            "X-Requested-With",
+            "Content-Type",
+        ])
         .allow_methods(["GET", "POST", "OPTIONS"]);
 
     let routes = api_doc.or(rapidoc_handler).or(machine_api).with(cors);

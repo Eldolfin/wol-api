@@ -37,7 +37,9 @@ impl StoreInner {
             .iter()
             .map(|(name, config)| Machine::new(config, name))
             .collect();
-        Ok(Self { machines: machines? })
+        Ok(Self {
+            machines: machines?,
+        })
     }
 
     pub async fn refresh_machine_state(&mut self) {
@@ -57,39 +59,47 @@ pub struct Machine {
     pub name: String,
     pub tasks: Vec<Task>,
     #[serde(skip_serializing)]
-    ip: IpAddr,
+    pub ip: IpAddr,
 }
 
 impl Machine {
-    pub async fn update_state(&mut self)  {
+    pub async fn update_state(&mut self) {
         debug!("Checking state for {}", self.name);
 
         let ping_res = ping_rs::send_ping_async(
             &self.ip,
             Duration::from_secs(1),
-            Arc::new(&[1,2,3,4]),
+            Arc::new(&[1, 2, 3, 4]),
             None,
         )
-        .await.is_ok();
+        .await
+        .is_ok();
 
         if !(ping_res && self.state == State::On) {
-            let res = ping_res && self
-                .ssh()
-                .args(["echo", "ok"])
-                .output()
-                .await
-                .map(|res| res.status.success()).is_ok();
-            self.state = match (res,ping_res, self.state) {
-                (true, _, _) => State::On,
-                (false, false, State::PendingOn) => State::PendingOn,
-                (false, false, _) => State::Off,
-                (false, true, State::On | State::Unknown | State::PendingOff) => State::PendingOff,
-                (false, true, State::Off | State::PendingOn) => State::PendingOn,
-            };
+            let res = ping_res
+                && self
+                    .ssh()
+                    .args(["echo", "ok"])
+                    .output()
+                    .await
+                    .map(|res| res.status.success())
+                    .is_ok();
+            // TODO: test this
+            self.state = Self::next_state(res, ping_res, self.state);
         }
 
         if self.state == State::On {
             self.flush_tasks().await;
+        }
+    }
+
+    fn next_state(res: bool, ping_res: bool, state: State) -> State {
+        match (res, ping_res, state) {
+            (_, true, State::PendingOff) | (false, true, State::On) => State::PendingOff,
+            (true, _, _) => State::On,
+            (false, true, State::Off) | (false, _, State::PendingOn) => State::PendingOn,
+            (false, false, _) => State::Off,
+            (false, true, State::Unknown) => State::Unknown, // we could be PendingOff or PendingOn
         }
     }
     fn ssh(&self) -> Command {
@@ -147,7 +157,12 @@ impl Machine {
 
     pub fn push_task(&mut self, task: Task, dry_run: bool) -> Result<String, String> {
         if task.id >= self.config.tasks.len() {
-            return Err(format!("Task id {} is out of bound for machine {} which has {} tasks", task.id, self.name, self.tasks.len()));
+            return Err(format!(
+                "Task id {} is out of bound for machine {} which has {} tasks",
+                task.id,
+                self.name,
+                self.tasks.len()
+            ));
         }
         let name = self.config.tasks[task.id].name.clone();
         debug!("Pushing task {}, to {}", name, self.name);
@@ -233,5 +248,39 @@ impl Task {
             );
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(false, false, State::Unknown, State::Off)]
+    #[case(false, false, State::Off, State::Off)]
+    #[case(false, false, State::On, State::Off)]
+    #[case(false, false, State::PendingOff, State::Off)]
+    #[case(false, false, State::PendingOn, State::PendingOn)]
+    #[case(false, true, State::Unknown, State::Unknown)]
+    #[case(false, true, State::PendingOff, State::PendingOff)]
+    #[case(false, true, State::PendingOn, State::PendingOn)]
+    #[case(false, true, State::On, State::PendingOff)]
+    #[case(false, true, State::Off, State::PendingOn)]
+    #[case(true, true, State::Unknown, State::On)]
+    #[case(true, true, State::On, State::On)]
+    #[case(true, true, State::Off, State::On)]
+    #[case(true, true, State::PendingOn, State::On)]
+    #[case(true, true, State::PendingOff, State::PendingOff)]
+    fn test_next_state(
+        #[case] res: bool,
+        #[case] ping_res: bool,
+        #[case] cur_state: State,
+        #[case] expected_state: State,
+    ) {
+        assert_eq!(
+            Machine::next_state(res, ping_res, cur_state),
+            expected_state
+        );
     }
 }

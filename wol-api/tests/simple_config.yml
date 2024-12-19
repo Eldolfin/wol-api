@@ -1,4 +1,9 @@
 machines:
-  tour:
-    mac: "f4:93:9f:eb:56:a8"
+  testing-docker-container:
+    mac: "02:42:ac:12:00:02"
     ip: "127.0.0.1"
+    ssh-port: 2222
+    tasks:
+      - name: Fake task
+        icon_url: "https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png"
+        command: ["echo", "hello", "world"]

@@ -1,9 +1,12 @@
 use super::service::{State, Store, StoreInner, Task};
-use crate::{config::Config, consts::{MACHINE_REFRESH_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED}};
+use crate::{
+    config::Config,
+    consts::{MACHINE_REFRESH_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
+};
 
 use core::convert::Infallible;
 use http::status::StatusCode;
-use std::{sync::Arc};
+use std::sync::Arc;
 use tokio::{sync::Mutex, time};
 use utoipa::OpenApi;
 use warp::{
@@ -13,7 +16,6 @@ use warp::{
     reply::{self, Reply},
     Filter,
 };
-
 
 #[derive(OpenApi)]
 #[openapi(paths(list, wake, shutdown, task))]
@@ -43,11 +45,7 @@ pub async fn list(store: Store) -> Result<Box<dyn Reply>, Infallible> {
     ),
 )]
 #[allow(clippy::significant_drop_tightening)]
-pub async fn shutdown(
-    store: Store,
-    name: String,
-    dry_run: bool,
-) -> Result<impl Reply, Infallible> {
+pub async fn shutdown(store: Store, name: String, dry_run: bool) -> Result<impl Reply, Infallible> {
     let mut lock = store.lock().await;
     let Some(machine) = lock.by_name_mut(&name) else {
         return Ok(reply::with_status(
@@ -88,8 +86,8 @@ pub async fn task(
         ));
     };
     match machine.push_task(task, dry_run) {
-        Ok(msg) =>  Ok(reply::with_status(msg, StatusCode::OK)),
-        Err(msg) =>  Ok( reply::with_status(msg, StatusCode::INTERNAL_SERVER_ERROR) )
+        Ok(msg) => Ok(reply::with_status(msg, StatusCode::OK)),
+        Err(msg) => Ok(reply::with_status(msg, StatusCode::INTERNAL_SERVER_ERROR)),
     }
 }
 
