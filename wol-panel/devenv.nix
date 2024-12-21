@@ -7,6 +7,8 @@
     # pkgs.nodePackages_latest."@vue/language-server"
   ];
 
+  env.NODE_OPTIONS = "--max-old-space-size=8192";
+
   languages.typescript.enable = true;
   scripts.hello.exec = ''
     echo hello from $GREET
