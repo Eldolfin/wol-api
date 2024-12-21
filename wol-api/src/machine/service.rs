@@ -43,7 +43,6 @@ impl StoreInner {
     }
 
     pub async fn refresh_machine_state(&mut self) {
-        info!("Refreshing machines states");
         for machine in &mut self.machines {
             machine.update_state().await;
         }
@@ -53,11 +52,11 @@ impl StoreInner {
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Machine {
-    pub config: config::MachineCfg,
-    pub state: State,
     #[schema(example = "computer1")]
     pub name: String,
+    pub state: State,
     pub tasks: Vec<Task>,
+    pub config: config::MachineCfg,
     #[serde(skip_serializing)]
     pub ip: IpAddr,
 }

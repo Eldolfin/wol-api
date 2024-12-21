@@ -6,7 +6,7 @@ use crate::{
 
 use core::convert::Infallible;
 use http::status::StatusCode;
-use std::sync::Arc;
+use std::{future::Future, pin::Pin, sync::Arc};
 use tokio::{sync::Mutex, time};
 use utoipa::OpenApi;
 use warp::{
@@ -133,7 +133,10 @@ pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn R
 pub fn handlers(
     config: &Config,
     dry_run: bool,
-) -> anyhow::Result<impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone> {
+) -> anyhow::Result<(
+    impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone,
+    Pin<Box<dyn Future<Output = ()>>>,
+)> {
     let store = Arc::new(Mutex::new(StoreInner::new(config)?));
 
     let list = {
@@ -160,15 +163,15 @@ pub fn handlers(
             .and_then(move |name, body: Task| task(store.clone(), name, dry_run, body))
     };
 
-    {
+    let check_state_thread = {
         let store = store.clone();
-        tokio::spawn(async move {
+        Box::pin(async move {
             loop {
                 store.lock().await.refresh_machine_state().await;
                 time::sleep(MACHINE_REFRESH_INTERVAL).await;
             }
-        });
-    }
+        })
+    };
 
-    Ok(list.or(wake).or(shutdown).or(task))
+    Ok((list.or(wake).or(shutdown).or(task), check_state_thread))
 }
