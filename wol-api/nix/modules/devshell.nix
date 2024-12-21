@@ -3,7 +3,6 @@
     config,
     self',
     pkgs,
-    lib,
     ...
   }: {
     devShells.default = pkgs.mkShell {
@@ -16,9 +15,7 @@
         just
         nixd # Nix language server
         bacon
-        config.process-compose.cargo-doc-live.outputs.package
         entr
-        rust-analyzer
         rustfmt
 
         # inputs.omnix.packages # TODO:
