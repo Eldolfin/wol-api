@@ -24,6 +24,7 @@ utoipa-rapidoc = "5.0.0"
 ping-rs = "0.1.2"
 inotify = "0.11.0"
 rstest = "0.23.0"
+futures-util = "0.3.31"
 
 [dev-dependencies]
 serde_yaml = "0.9.34"
