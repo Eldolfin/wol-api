@@ -5,13 +5,14 @@ use figment::{
 };
 use futures_util::StreamExt as _;
 use inotify::{Inotify, WatchMask};
-use log::{error, info};
+use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
+use tokio::sync::{self, mpsc::Receiver};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Debug, PartialEq, Eq)]
@@ -52,21 +53,30 @@ pub struct TaskCfg {
     pub name: String,
 }
 
-pub fn open(path: &PathBuf, auto_reload: bool) -> anyhow::Result<Arc<Mutex<Config>>> {
+pub fn open(
+    path: &PathBuf,
+    auto_reload: bool,
+) -> anyhow::Result<(Arc<Mutex<Config>>, Receiver<()>)> {
     fn load_config(path: &PathBuf) -> Result<Config, anyhow::Error> {
-        Figment::new()
+        let config = Figment::new()
             .merge(Yaml::file(path))
             .extract()
-            .with_context(|| format!("Failed to parse config file at {}", path.display()))
+            .with_context(|| format!("Failed to parse config file at {}", path.display()))?;
+        debug!("config: {config:?}");
+        Ok(config)
     }
 
     let shared_config = Arc::new(Mutex::new(load_config(path)?));
+    let (config_changed_sender, config_changed_receiver) = sync::mpsc::channel(10);
 
     if auto_reload {
         let inotify = Inotify::init().expect("Failed to initialize inotify");
         inotify
             .watches()
-            .add(path, WatchMask::MODIFY)
+            .add(
+                path.parent().expect("Config file cannot be the root dir"),
+                WatchMask::MODIFY,
+            )
             .with_context(|| {
                 format!("Failed to add a watcher on config file {}", path.display())
             })?;
@@ -76,13 +86,24 @@ pub fn open(path: &PathBuf, auto_reload: bool) -> anyhow::Result<Arc<Mutex<Confi
         tokio::spawn(async move {
             let mut buffer = [0; 1024];
             let mut stream = inotify.into_event_stream(&mut buffer).unwrap();
-            while let Some(_event_or_error) = stream.next().await {
+            while let Some(event_or_error) = stream.next().await {
+                let event = event_or_error.expect("Err while checking for config changes");
+                if event.name.unwrap() != path.file_name().unwrap() {
+                    // ignore sibling file changes
+                    continue;
+                }
+                debug!("config file changed");
                 match load_config(&path) {
                     Ok(new_config) => {
                         *shared_config.lock().unwrap() = new_config;
+                        if config_changed_sender.send(()).await.is_err() {
+                            debug!("Config changed listener (main thread) stopped. Stopping config reloading thread");
+                            break;
+                        }
+                        debug!("Successfully hot reloaded config");
                     }
                     Err(err) => {
-                        error!("Failed to not hot-reload config: {}", err);
+                        error!("Failed to not hot-reload config: {:#}", err);
                     }
                 };
             }
@@ -90,5 +111,5 @@ pub fn open(path: &PathBuf, auto_reload: bool) -> anyhow::Result<Arc<Mutex<Confi
         });
     }
 
-    Ok(shared_config)
+    Ok((shared_config, config_changed_receiver))
 }

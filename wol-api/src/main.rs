@@ -1,7 +1,3 @@
-use figment::{
-    providers::{Format as _, Yaml},
-    Figment,
-};
 use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     path::PathBuf,
@@ -9,9 +5,12 @@ use std::{
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use warp::{reply, Filter};
-use wol_relay_server::{config::Config, consts::API_PATH, machine};
+use wol_relay_server::{
+    config::{self},
+    consts::{API_PATH, CONFIG_AUTO_RELOAD},
+    machine,
+};
 
-use anyhow::Context as _;
 use clap::Parser;
 use log::debug;
 
@@ -50,25 +49,19 @@ struct InnerApiDoc;
 )]
 struct ApiDoc;
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 29)]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
+
     let args = Args::parse();
     debug!("{args:?}");
 
-    let config: Config = Figment::new()
-        .merge(Yaml::file(&args.config_path))
-        .extract()
-        .context("Failed to parse config file")?;
-
-    debug!("{config:?}");
+    let (config, mut config_changed) = config::open(&args.config_path, CONFIG_AUTO_RELOAD)?;
 
     let api_doc = warp::path!("api-doc.json").map(|| reply::json(&ApiDoc::openapi()));
     let rapidoc_handler = warp::path("rapidoc")
         .and(warp::get())
         .map(|| reply::html(RapiDoc::new("/api/api-doc.json").to_html()));
-
-    let machine_api = warp::path("machine").and(machine::api::handlers(&config, args.dry_run)?);
 
     // let cors = warp::cors().allow_origin("http://localhost:3000").allow_methods(vec!["GET", "POST"]);
     // let cors = warp::cors().allow_any_origin().allow_methods(["GET", "POST", "OPTIONS"]);
@@ -85,11 +78,23 @@ async fn main() -> anyhow::Result<()> {
         ])
         .allow_methods(["GET", "POST", "OPTIONS"]);
 
-    let routes = api_doc.or(rapidoc_handler).or(machine_api).with(cors);
-    let routes = warp::path(API_PATH.strip_prefix("/").unwrap()).and(routes);
-
     let listening_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 3030);
     println!("Listening on http://{listening_addr}");
-    warp::serve(routes).run(listening_addr).await;
-    Ok(())
+
+    loop {
+        let (handlers, bg_task) = machine::api::handlers(&config.lock().unwrap(), args.dry_run)?;
+        let machine_api = warp::path("machine").and(handlers);
+        let routes = api_doc.or(rapidoc_handler).or(machine_api).with(&cors);
+        let routes = warp::path(API_PATH.strip_prefix("/").unwrap()).and(routes);
+        tokio::select! {
+            biased;
+
+            v = config_changed.recv() => {
+                v.unwrap();
+            },
+            _ = warp::serve(routes).run(listening_addr) => {},
+            _ = bg_task => {},
+        };
+        log::info!("restarting the server");
+    }
 }
