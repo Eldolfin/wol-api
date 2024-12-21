@@ -1525,6 +1525,7 @@ dependencies = [
  "clap",
  "env_logger",
  "figment",
+ "futures-util",
  "inotify",
  "log",
  "ping-rs",

@@ -3,6 +3,9 @@ use figment::{
     providers::{Format, Yaml},
     Figment,
 };
+use futures_util::StreamExt as _;
+use inotify::{Inotify, WatchMask};
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -50,10 +53,42 @@ pub struct TaskCfg {
 }
 
 pub fn open(path: &PathBuf, auto_reload: bool) -> anyhow::Result<Arc<Mutex<Config>>> {
-    let config: Config = Figment::new()
-        .merge(Yaml::file(&path))
-        .extract()
-        .with_context(|| format!("Failed to parse config file at {}", path.display()))?;
+    fn load_config(path: &PathBuf) -> Result<Config, anyhow::Error> {
+        Figment::new()
+            .merge(Yaml::file(path))
+            .extract()
+            .with_context(|| format!("Failed to parse config file at {}", path.display()))
+    }
 
-    Ok(Arc::new(Mutex::new(config)))
+    let shared_config = Arc::new(Mutex::new(load_config(path)?));
+
+    if auto_reload {
+        let inotify = Inotify::init().expect("Failed to initialize inotify");
+        inotify
+            .watches()
+            .add(path, WatchMask::MODIFY)
+            .with_context(|| {
+                format!("Failed to add a watcher on config file {}", path.display())
+            })?;
+
+        let path = path.to_owned();
+        let shared_config = shared_config.clone();
+        tokio::spawn(async move {
+            let mut buffer = [0; 1024];
+            let mut stream = inotify.into_event_stream(&mut buffer).unwrap();
+            while let Some(_event_or_error) = stream.next().await {
+                match load_config(&path) {
+                    Ok(new_config) => {
+                        *shared_config.lock().unwrap() = new_config;
+                    }
+                    Err(err) => {
+                        error!("Failed to not hot-reload config: {}", err);
+                    }
+                };
+            }
+            info!("Stopped watching the config for changes.");
+        });
+    }
+
+    Ok(shared_config)
 }
