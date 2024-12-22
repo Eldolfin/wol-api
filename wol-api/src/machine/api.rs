@@ -1,24 +1,26 @@
 use super::service::{State, Store, StoreInner, Task};
 use crate::{
     config::Config,
-    consts::{MACHINE_REFRESH_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
+    consts::{MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
 };
 
 use core::convert::Infallible;
+use futures_util::{SinkExt as _, StreamExt as _};
 use http::status::StatusCode;
 use std::{future::Future, pin::Pin, sync::Arc};
 use tokio::{sync::Mutex, time};
 use utoipa::OpenApi;
 use warp::{
     body::json,
+    filters::ws::{Message, WebSocket},
     http,
     reject::Rejection,
     reply::{self, Reply},
-    Filter,
+    ws, Filter,
 };
 
 #[derive(OpenApi)]
-#[openapi(paths(list, wake, shutdown, task))]
+#[openapi(paths(list, wake, shutdown, task, list_ws))]
 pub struct Api;
 
 #[utoipa::path(
@@ -31,6 +33,24 @@ pub struct Api;
 pub async fn list(store: Store) -> Result<Box<dyn Reply>, Infallible> {
     let machines = store.lock().await;
     Ok(Box::new(reply::json(&machines.clone())))
+}
+
+#[utoipa::path(
+    get,
+    path = "/list_ws",
+    responses(
+        (status = 101, description = "Switching protocol to websocket", body = StoreInner)
+    )
+)]
+pub async fn list_ws(store: Store, websocket: WebSocket) {
+    let (mut tx, _rx) = websocket.split();
+    loop {
+        let machines = store.lock().await.to_owned();
+        tx.send(Message::text(serde_json::to_string(&machines).unwrap()))
+            .await
+            .expect("Failed to send to websocket");
+        time::sleep(SEND_STATE_INTERVAL).await;
+    }
 }
 
 #[utoipa::path(
@@ -146,6 +166,30 @@ pub fn handlers(
             .and(warp::get())
             .and_then(move || list(store.clone()))
     };
+    let list_ws = {
+        let store = store.clone();
+        warp::path!("list_ws")
+            .and(ws())
+            // .map(move || list_ws(store.clone()))
+            .map(move |ws: ws::Ws| {
+                // And then our closure will be called when it completes...
+                let store = store.clone();
+                ws.on_upgrade(move |websocket| {
+                    // async move {
+                    // Just echo all messages back...
+                    // rx.forward(tx).map(|result| {
+                    //     if let Err(e) = result {
+                    //         eprintln!("websocket error: {:?}", e);
+                    //     }
+                    // })
+                    // }
+                    let store = store.clone();
+                    async move {
+                        list_ws(store, websocket).await;
+                    }
+                })
+            })
+    };
 
     let wake = {
         let store = store.clone();
@@ -174,5 +218,8 @@ pub fn handlers(
         })
     };
 
-    Ok((list.or(wake).or(shutdown).or(task), check_state_thread))
+    Ok((
+        list.or(wake).or(shutdown).or(task).or(list_ws),
+        check_state_thread,
+    ))
 }
