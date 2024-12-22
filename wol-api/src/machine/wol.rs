@@ -1,5 +1,5 @@
 use anyhow::Context as _;
-use core::str::FromStr;
+use core::str::FromStr as _;
 use wol::MacAddr;
 
 pub fn send(mac_addr: &str, dry_run: bool) -> anyhow::Result<()> {

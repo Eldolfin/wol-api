@@ -1,6 +1,6 @@
-use anyhow::Context;
+use anyhow::Context as _;
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format as _, Yaml},
     Figment,
 };
 use futures_util::StreamExt as _;

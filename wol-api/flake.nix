@@ -6,10 +6,13 @@
     systems.url = "github:nix-systems/default";
     rust-flake.url = "github:juspay/rust-flake";
     rust-flake.inputs.nixpkgs.follows = "nixpkgs";
+    rust-flake.inputs.rust-overlay.follows = "rust-overlay";
+    rust-overlay.url = "github:oxalica/rust-overlay";
 
     # Dev tools
     treefmt-nix.url = "github:numtide/treefmt-nix";
     omnix.url = "github:juspay/omnix";
+    pre-commit-hooks.url = "github:cachix/git-hooks.nix";
   };
 
   outputs = inputs:

@@ -15,3 +15,6 @@ run *ARGS:
 # Run 'cargo watch' to run the project (auto-recompiles)
 watch *ARGS:
      git ls-files | entr -cr cargo run {{ARGS}}
+
+lint:
+    cargo clippy

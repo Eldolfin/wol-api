@@ -1,11 +1,11 @@
 use std::{
     collections::HashMap,
     fs::{self, File},
-    io::Write,
+    io::Write as _,
     time::Duration,
 };
 
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use tempfile::TempDir;
 use tokio::time::timeout;
 use wol_relay_server::config::{self, Config, MachineCfg};
