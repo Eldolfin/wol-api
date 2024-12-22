@@ -44,7 +44,7 @@ pub async fn list(store: Store) -> Result<Box<dyn Reply>, Infallible> {
         ("name" = String, Path, description = "Name of the machine to shutdown")
     ),
 )]
-#[allow(clippy::significant_drop_tightening)]
+#[expect(clippy::significant_drop_tightening, reason = "todo fix mais flemme")]
 pub async fn shutdown(store: Store, name: String, dry_run: bool) -> Result<impl Reply, Infallible> {
     let mut lock = store.lock().await;
     let Some(machine) = lock.by_name_mut(&name) else {
@@ -71,7 +71,7 @@ pub async fn shutdown(store: Store, name: String, dry_run: bool) -> Result<impl 
         ("name" = String, Path, description = "Name of the machine to run the task on")
     ),
 )]
-#[allow(clippy::significant_drop_tightening)]
+#[expect(clippy::significant_drop_tightening, reason = "todo fix mais flemme")]
 pub async fn task(
     store: Arc<Mutex<StoreInner>>,
     name: String,
@@ -102,7 +102,7 @@ pub async fn task(
         ("name" = String, Path, description = "Name of the machine to wake")
     ),
 )]
-#[allow(clippy::significant_drop_tightening)]
+#[expect(clippy::significant_drop_tightening, reason = "todo fix mais flemme")]
 pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn Reply>, Infallible> {
     // TODO: change machine state
     let mut lock = store.lock().await;
@@ -130,6 +130,7 @@ pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn R
     }))
 }
 
+#[expect(clippy::type_complexity, reason = "aie aie aie")]
 pub fn handlers(
     config: &Config,
     dry_run: bool,

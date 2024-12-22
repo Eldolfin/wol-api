@@ -1,6 +1,6 @@
 use super::wol;
 use crate::config;
-use anyhow::Context;
+use anyhow::Context as _;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -174,7 +174,10 @@ impl Machine {
     }
 
     async fn flush_tasks(&mut self) {
-        #[allow(clippy::collection_is_never_read)]
+        #[expect(
+            clippy::collection_is_never_read,
+            reason = "TODO: send them to front and do a popup"
+        )]
         let mut errors = Vec::new(); // TODO: report them somehow
         while let Some(task) = self.tasks.pop() {
             let res = task

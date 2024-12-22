@@ -1,6 +1,6 @@
-use anyhow::Context;
+use anyhow::Context as _;
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format as _, Yaml},
     Figment,
 };
 use wol_relay_server::{config::Config, machine::service::*};

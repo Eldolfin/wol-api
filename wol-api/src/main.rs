@@ -4,7 +4,7 @@ use std::{
 };
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
-use warp::{reply, Filter};
+use warp::{reply, Filter as _};
 use wol_relay_server::{
     config::{self},
     consts::{API_PATH, CONFIG_AUTO_RELOAD},
