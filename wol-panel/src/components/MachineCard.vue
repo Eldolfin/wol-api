@@ -115,24 +115,19 @@ const avatar_color = computed(() => {
       <template #description>
         {{ `state: ${state}` }}
         <br />
-        {{ `ip: ${machine.config.ip}` }}
-        <br />
         {{ `mac: ${machine.config.mac}` }}
+        <br />
+        <n-space vertical>
+        <CopiableButton :value="machine.config.ip"/>
+        <CopiableButton :value="`ssh -p ${machine.config['ssh-port']} oscar@${machine.config.ip}`"/>
+        </n-space>
       </template>
       <template #action>
         <n-button-group>
           <n-space size="small">
-            <n-switch
-              size="large"
-              :loading="button_blocked"
-              :value="machine.state === 'on'"
-              @update:value="handleSwitchMachineState"
-            />
-            <n-button
-              v-for="(task, i) in machine.config.tasks"
-              :key="i"
-              @click="handleQueueTask(i)"
-            >
+            <n-switch size="large" :loading="button_blocked" :value="machine.state === 'on'"
+              @update:value="handleSwitchMachineState" />
+            <n-button v-for="(task, i) in machine.config.tasks" :key="i" @click="handleQueueTask(i)">
               <n-image width="30" :src="task.icon_url" preview-disabled>
                 <template #error>
                   <n-icon :size="30" color="lightGrey">
