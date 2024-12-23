@@ -2,8 +2,8 @@
 import { useThemeVars } from "naive-ui";
 import type { components } from "../lib/api/v1";
 import { unreachable } from "../lib/utils/rust";
-import { Power, ImageOutline as ImageOutlineIcon } from "@vicons/ionicons5";
-import { api_client } from "../provides";
+import { Power, ImageOutline as ImageOutlineIcon, LogInOutline } from "@vicons/ionicons5";
+import { api_client, terminal_pane_provide } from "../provides";
 
 const machine = defineModel<components["schemas"]["Machine"]>("machine", {
   required: true,
@@ -11,6 +11,7 @@ const machine = defineModel<components["schemas"]["Machine"]>("machine", {
 
 const theme = useThemeVars();
 const loading = ref(false);
+const terminalOpened = ref(false);
 const button_blocked = computed(
   () =>
     loading.value ||
@@ -19,6 +20,7 @@ const button_blocked = computed(
     machine.value.state == "unknown",
 );
 const api = inject(api_client)!;
+const terminal_pane = inject(terminal_pane_provide);
 
 function handle_wake() {
   loading.value = true;
@@ -99,6 +101,11 @@ const avatar_color = computed(() => {
       return theme.value.warningColorSuppl;
   }
 });
+
+function handleOpenTerminal() {
+  terminalOpened.value = true;
+}
+
 </script>
 <template>
   <n-card :style="{ borderRadius: theme.borderRadius }">
@@ -136,9 +143,17 @@ const avatar_color = computed(() => {
                 </template>
               </n-image>
             </n-button>
+             <n-button :loading="loading" @click="handleOpenTerminal">
+              <template #icon>
+                <n-icon>
+                  <LogInOutline />
+                </n-icon>
+              </template>
+              Connect via ssh
+            </n-button>
           </n-space>
         </n-button-group>
-      </template>
+    </template>
     </n-thing>
   </n-card>
 </template>
