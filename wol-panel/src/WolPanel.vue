@@ -3,9 +3,7 @@ import "./main.css";
 import MachineList from "./components/MachineList.vue";
 
 import createClient from "openapi-fetch";
-import { api_client } from "./provides";
-
-const baseUrl = import.meta.env.VITE_WOL_API_URL;
+import { api_client, baseUrl } from "./provides";
 
 provide(api_client, createClient({ baseUrl }));
 </script>

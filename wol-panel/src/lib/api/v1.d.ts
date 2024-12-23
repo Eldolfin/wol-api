@@ -4,220 +4,256 @@
  */
 
 export interface paths {
-    "/api/machine/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/api/machine/list": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/machine/{name}/shutdown": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["shutdown"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get: operations["list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/machine/list_ws": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/machine/{name}/task": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["task"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get: operations["list_ws"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/machine/{name}/shutdown": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/machine/{name}/wake": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["wake"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post: operations["shutdown"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/machine/{name}/task": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    get?: never;
+    put?: never;
+    post: operations["task"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/machine/{name}/wake": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["wake"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        Machine: {
-            config: components["schemas"]["MachineCfg"];
-            /** @example computer1 */
-            name: string;
-            state: components["schemas"]["State"];
-            tasks: components["schemas"]["Task"][];
-        };
-        MachineCfg: {
-            /** @example 192.168.1.4 */
-            ip: string;
-            /** @example f4:93:9f:eb:56:a8 */
-            mac: string;
-            /**
-             * Format: int32
-             * @example 22
-             */
-            "ssh-port"?: number;
-            tasks?: components["schemas"]["TaskCfg"][];
-        };
-        /**
-         * @example on
-         * @enum {string}
-         */
-        State: "unknown" | "on" | "off" | "pending_on" | "pending_off";
-        StoreInner: {
-            machines: components["schemas"]["Machine"][];
-        };
-        Task: {
-            id: number;
-        };
-        TaskCfg: {
-            /** @example ["echo", "hello", "world"] */
-            command: string[];
-            /** @example https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png */
-            icon_url: string;
-            /** @example Say hello world */
-            name: string;
-        };
+  schemas: {
+    Machine: {
+      config: components["schemas"]["MachineCfg"];
+      /** @example computer1 */
+      name: string;
+      state: components["schemas"]["State"];
+      tasks: components["schemas"]["Task"][];
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    MachineCfg: {
+      /** @example 192.168.1.4 */
+      ip: string;
+      /** @example f4:93:9f:eb:56:a8 */
+      mac: string;
+      /**
+       * Format: int32
+       * @example 22
+       */
+      "ssh-port"?: number;
+      tasks?: components["schemas"]["TaskCfg"][];
+    };
+    /**
+     * @example on
+     * @enum {string}
+     */
+    State: "unknown" | "on" | "off" | "pending_on" | "pending_off";
+    StoreInner: {
+      machines: components["schemas"]["Machine"][];
+    };
+    Task: {
+      id: number;
+    };
+    TaskCfg: {
+      /** @example ["echo", "hello", "world"] */
+      command: string[];
+      /** @example https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png */
+      icon_url: string;
+      /** @example Say hello world */
+      name: string;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List machines successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StoreInner"];
-                };
-            };
-        };
+  list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    shutdown: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Name of the machine to shutdown */
-                name: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description List machines successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Shutdown the machine successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Machine does not exist */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["StoreInner"];
         };
+      };
     };
-    task: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Name of the machine to run the task on */
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Task"];
-            };
-        };
-        responses: {
-            /** @description Task added to the queue successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  list_ws: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    wake: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Name of the machine to wake */
-                name: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Switching protocol to websocket */
+      101: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Woke the machine successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Machine does not exist */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["StoreInner"];
         };
+      };
     };
+  };
+  shutdown: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Name of the machine to shutdown */
+        name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shutdown the machine successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Machine does not exist */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  task: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Name of the machine to run the task on */
+        name: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Task"];
+      };
+    };
+    responses: {
+      /** @description Task added to the queue successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  wake: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Name of the machine to wake */
+        name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Woke the machine successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Machine does not exist */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
 }
