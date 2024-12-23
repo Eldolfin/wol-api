@@ -1,14 +1,16 @@
 use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     path::PathBuf,
+    sync::Arc,
 };
+use tokio::sync;
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use warp::{reply, Filter as _};
 use wol_relay_server::{
     config::{self},
     consts::{API_PATH, CONFIG_AUTO_RELOAD},
-    machine,
+    machine::{self, service::StoreInner},
 };
 
 use clap::Parser;
@@ -80,9 +82,10 @@ async fn main() -> anyhow::Result<()> {
 
     let listening_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 3030);
     println!("Listening on http://{listening_addr}");
+    let store = Arc::new(sync::Mutex::new(StoreInner::new(&config.lock().unwrap())?));
 
     loop {
-        let (handlers, bg_task) = machine::api::handlers(&config.lock().unwrap(), args.dry_run)?;
+        let (handlers, bg_task) = machine::api::handlers(store.clone(), args.dry_run)?;
         let machine_api = warp::path("machine").and(handlers);
         let routes = api_doc.or(rapidoc_handler).or(machine_api).with(&cors);
         let routes = warp::path(API_PATH.strip_prefix("/").unwrap()).and(routes);
@@ -90,6 +93,8 @@ async fn main() -> anyhow::Result<()> {
             biased;
 
             v = config_changed.recv() => {
+                let new_store = StoreInner::new(&config.lock().unwrap())?;
+                *store.lock().await = new_store;
                 v.unwrap();
             },
             _ = warp::serve(routes).run(listening_addr) => {},

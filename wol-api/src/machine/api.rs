@@ -1,7 +1,6 @@
 use super::service::{State, Store, StoreInner, Task};
-use crate::{
-    config::Config,
-    consts::{MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
+use crate::consts::{
+    MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED,
 };
 
 use core::convert::Infallible;
@@ -152,14 +151,12 @@ pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn R
 
 #[expect(clippy::type_complexity, reason = "aie aie aie")]
 pub fn handlers(
-    config: &Config,
+    store: Arc<Mutex<StoreInner>>,
     dry_run: bool,
 ) -> anyhow::Result<(
     impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone,
     Pin<Box<dyn Future<Output = ()>>>,
 )> {
-    let store = Arc::new(Mutex::new(StoreInner::new(config)?));
-
     let list = {
         let store = store.clone();
         warp::path!("list")

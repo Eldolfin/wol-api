@@ -1,34 +1,41 @@
 <script setup lang="ts">
 import { CloudOffline } from "@vicons/ionicons5";
-import { api_client } from "../provides";
+import { api_client, baseUrl } from "../provides";
+import { type components } from "../lib/api/v1";
 
-const api = inject(api_client)!;
+type State = components["schemas"]["StoreInner"];
 
-const {
-  data,
-  refresh: refresh_computers,
-  error,
-} = useAsyncData("computer-list", () =>
-  api.GET("/api/machine/list").then((res) => {
-    if (res.response.status !== 200) {
-      throw createError({
-        statusCode: res.response.status,
-        statusMessage: "Backend fail",
-      });
-    }
-    return res;
-  }),
-);
+// const api = inject(api_client)!;
+// const {
+// data,
+// refresh: refresh_computers,
+// error,
+// } = useAsyncData("computer-list", () =>
+// api.GET("/api/machine/list").then((res) => {
+// if (res.response.status !== 200) {
+// throw createError({
+// statusCode: res.response.status,
+// statusMessage: "Backend fail",
+// });
+// }
+// return res;
+// }),
+// );
+const machines_state = ref<State | undefined>(undefined);
 
-const machines = computed(() => data.value?.data?.machines);
+const ws = new WebSocket(baseUrl + "/api/machine/list_ws");
+ws.onmessage = (msg) => {
+  const state: State = JSON.parse(msg.data);
+  machines_state.value = state;
+};
 
-useIntervalFn(async () => await refresh_computers(), 1000);
+const machines = computed(() => machines_state.value?.machines);
 </script>
 
 <template style="padding: 10px">
   <n-list style="padding: 10px">
     <template #header> Machines </template>
-    <template v-if="data">
+    <template v-if="machines_state !== undefined">
       <n-list-item
         v-for="i in machines!.length"
         :key="i"
@@ -44,7 +51,7 @@ useIntervalFn(async () => await refresh_computers(), 1000);
           <n-icon>
             <CloudOffline />
           </n-icon>
-          {{ error?.name }}: {{ error?.message }}
+          <!-- {{ error?.name }}: {{ error?.message }} -->
         </n-text>
       </n-h2>
     </template>
