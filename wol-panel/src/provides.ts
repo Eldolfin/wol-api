@@ -6,4 +6,7 @@ export type ApiClient = Client<paths>;
 
 export const api_client = Symbol() as InjectionKey<ApiClient>;
 
-export const baseUrl = import.meta.env.VITE_WOL_API_URL;
+const VITE_WOL_API_URL = import.meta.env.VITE_WOL_API_URL;
+const api_path =
+  VITE_WOL_API_URL === "/" ? window.location.href : VITE_WOL_API_URL;
+export const baseUrl = new URL(api_path);

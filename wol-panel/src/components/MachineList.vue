@@ -4,26 +4,9 @@ import { api_client, baseUrl } from "../provides";
 import { type components } from "../lib/api/v1";
 
 type State = components["schemas"]["StoreInner"];
-
-// const api = inject(api_client)!;
-// const {
-// data,
-// refresh: refresh_computers,
-// error,
-// } = useAsyncData("computer-list", () =>
-// api.GET("/api/machine/list").then((res) => {
-// if (res.response.status !== 200) {
-// throw createError({
-// statusCode: res.response.status,
-// statusMessage: "Backend fail",
-// });
-// }
-// return res;
-// }),
-// );
 const machines_state = ref<State | undefined>(undefined);
 
-const ws = new WebSocket(baseUrl + "/api/machine/list_ws");
+const ws = new WebSocket(baseUrl.origin + "/api/machine/list_ws");
 ws.onmessage = (msg) => {
   const state: State = JSON.parse(msg.data);
   machines_state.value = state;
