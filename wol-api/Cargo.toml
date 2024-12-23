@@ -25,6 +25,7 @@ ping-rs = "0.1.2"
 inotify = "0.11.0"
 rstest = "0.23.0"
 futures-util = "0.3.31"
+russh = "0.49.2"
 
 [dev-dependencies]
 serde_yaml = "0.9.34"

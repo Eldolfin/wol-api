@@ -84,6 +84,7 @@ async fn main() -> anyhow::Result<()> {
     println!("Listening on http://{listening_addr}");
     let store = Arc::new(sync::Mutex::new(StoreInner::new(&config.lock().unwrap())?));
 
+    // TODO: this doesn't need to be a select anymore, just spawn each tasks
     loop {
         let (handlers, bg_task) = machine::api::handlers(store.clone(), args.dry_run)?;
         let machine_api = warp::path("machine").and(handlers);

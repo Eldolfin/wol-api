@@ -1,13 +1,14 @@
 use super::service::{State, Store, StoreInner, Task};
-use crate::consts::{
-    MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED,
+use crate::{
+    consts::{MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
+    machine::ssh,
 };
 
 use core::convert::Infallible;
 use futures_util::{SinkExt as _, StreamExt as _};
 use http::status::StatusCode;
-use std::{future::Future, pin::Pin, sync::Arc};
-use tokio::{sync::Mutex, time};
+use std::{future::Future, pin::Pin};
+use tokio::time;
 use utoipa::OpenApi;
 use warp::{
     body::json,
@@ -19,7 +20,12 @@ use warp::{
 };
 
 #[derive(OpenApi)]
-#[openapi(paths(list, wake, shutdown, task, list_ws))]
+#[openapi(
+    paths(list, wake, shutdown, task, list_ws),
+    nest(
+        (path = "/ssh", api = ssh::api::Api)
+    ),
+)]
 pub struct Api;
 
 #[utoipa::path(
@@ -92,7 +98,7 @@ pub async fn shutdown(store: Store, name: String, dry_run: bool) -> Result<impl 
 )]
 #[expect(clippy::significant_drop_tightening, reason = "todo fix mais flemme")]
 pub async fn task(
-    store: Arc<Mutex<StoreInner>>,
+    store: Store,
     name: String,
     dry_run: bool,
     task: Task,
@@ -151,7 +157,7 @@ pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn R
 
 #[expect(clippy::type_complexity, reason = "aie aie aie")]
 pub fn handlers(
-    store: Arc<Mutex<StoreInner>>,
+    store: Store,
     dry_run: bool,
 ) -> anyhow::Result<(
     impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone,
@@ -215,8 +221,14 @@ pub fn handlers(
         })
     };
 
-    Ok((
-        list.or(wake).or(shutdown).or(task).or(list_ws),
-        check_state_thread,
-    ))
+    let ssh_handlers = warp::path("ssh").and(ssh::api::handlers(store.clone()));
+
+    let routes = list
+        .or(wake)
+        .or(shutdown)
+        .or(task)
+        .or(list_ws)
+        .or(ssh_handlers);
+
+    Ok((routes, check_state_thread))
 }
