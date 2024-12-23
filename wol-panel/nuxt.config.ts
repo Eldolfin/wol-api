@@ -4,6 +4,11 @@ import Components from "unplugin-vue-components/vite";
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  app: {
+    head: {
+      link: [{ rel: "icon", type: "image/svg", href: "/favicon.svg" }],
+    },
+  },
   modules: ["nuxtjs-naive-ui", "@vueuse/nuxt", "@nuxt/eslint"],
   ssr: false,
   devtools: { enabled: true },
