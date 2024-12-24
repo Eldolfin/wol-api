@@ -7,6 +7,7 @@ use crate::{
 use core::convert::Infallible;
 use futures_util::{SinkExt as _, StreamExt as _};
 use http::status::StatusCode;
+use log::debug;
 use std::{future::Future, pin::Pin};
 use tokio::time;
 use utoipa::OpenApi;
@@ -51,9 +52,16 @@ pub async fn list_ws(store: Store, websocket: WebSocket) {
     let (mut tx, _rx) = websocket.split();
     loop {
         let machines = store.lock().await.to_owned();
-        tx.send(Message::text(serde_json::to_string(&machines).unwrap()))
-            .await
-            .expect("Failed to send to websocket");
+        let res = tx
+            .send(Message::text(serde_json::to_string(&machines).unwrap()))
+            .await;
+        match res {
+            Ok(_) => (),
+            Err(e) => {
+                debug!("/list_ws was closed by the client: {e:#}");
+                break;
+            }
+        }
         time::sleep(SEND_STATE_INTERVAL).await;
     }
 }

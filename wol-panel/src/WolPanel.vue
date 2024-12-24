@@ -10,7 +10,7 @@ provide(terminal_pane_provide, DefaultTerminalState)
 
 </script>
 <template>
-  <n-split direction="vertical" :size="1">
+  <n-split direction="vertical" style="height: 100vh; width: 100vw">
     <template #1>
       <div :style="{ height: '100%' }">
         <MachineList />
