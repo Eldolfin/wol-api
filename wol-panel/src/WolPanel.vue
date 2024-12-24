@@ -12,14 +12,14 @@ provide(terminal_pane_provide, DefaultTerminalState)
 <template>
   <n-split direction="vertical" style="height: 100vh; width: 100vw">
     <template #1>
-      <div :style="{ height: '100%' }">
-        <MachineList />
-      </div>
+      <n-card :style="{ height: '100%' }">
+        <MachineList :style="{ height: '100%' }"/>
+      </n-card>
     </template>
     <template #2>
-      <div :style="{ height: '100%' }">
-        <Terminal/>
-      </div>
+      <n-card :style="{ height: '100%' }" closable title="Remote Terminal">
+        <Terminal :style="{ height: '100%' }"/>
+      </n-card>
     </template>
   </n-split>
 </template>

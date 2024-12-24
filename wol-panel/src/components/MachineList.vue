@@ -16,8 +16,8 @@ ws.onmessage = (msg) => {
 const machines = computed(() => machines_state.value?.machines);
 </script>
 
-<template style="padding: 10px">
-  <n-list style="padding: 10px">
+<template>
+  <n-list>
     <template #header> Machines </template>
     <template v-if="machines_state !== undefined">
       <n-list-item v-for="i in machines!.length" :key="i" style="width: calc(100vw - 10px * 2)">
