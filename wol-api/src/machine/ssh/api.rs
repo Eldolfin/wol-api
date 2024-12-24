@@ -1,9 +1,10 @@
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{path::PathBuf, sync::Arc};
 
 use async_trait::async_trait;
-use futures_util::{FutureExt as _, SinkExt as _, StreamExt as _};
+use futures_util::{SinkExt as _, StreamExt as _};
+use log::debug;
 use russh::{
-    client::{self, Session},
+    client::{self},
     keys::{key::PrivateKeyWithHashAlg, load_secret_key, ssh_key},
     ChannelMsg,
 };
@@ -37,6 +38,8 @@ async fn connect(
     store: Store,
     websocket: WebSocket,
 ) {
+    // TODO: move as much initialisation as possible in a constructor?
+    // TODO: keep in mind that the config is hot reloading
     const USER: &str = "oscar";
     let (mut tx, mut rx) = websocket.split();
     let key_pair = load_secret_key(ssh_private_key_path, None).unwrap();
@@ -77,21 +80,19 @@ async fn connect(
         .request_pty(false, "xterm", W, H, 0, 0, &[])
         .await
         .unwrap();
-    const COMMAND: &str = "bash";
+    channel.exec(true, "$0").await.unwrap();
 
-    channel.exec(true, COMMAND).await.unwrap();
-
-    let mut buf = vec![0; 1024];
-    let mut stdin_closed = false;
     loop {
         tokio::select! {
-
-           // There's terminal input available from the user
-            r = rx.next(), if !stdin_closed => {
+            r = rx.next()=> {
                 match r {
                     Some(Ok(data)) => {
                         channel.data(data.as_bytes()).await.unwrap()},
-                    _ => todo!(),
+                    Some(Err(_)) => unreachable!("Idk how this branch can be reached..."),
+                    _ => {
+                        debug!("ssh session: client disconnected");
+                        break;
+                    },
                 };
             },
             // There's an event available on the session channel
@@ -100,18 +101,15 @@ async fn connect(
                     // Write data to the terminal
                     ChannelMsg::Data { ref data } => {
                         tx.send(Message::binary(data.to_vec())).await.unwrap();
-                        // stdout.write_all(data).await.unwrap();
-                        // stdout.flush().await.unwrap();
-                    }
+                    },
                     // The command has returned an exit code
-                    // ChannelMsg::ExitStatus { exit_status } => {
-                    //     code = exit_status;
-                    //     if !stdin_closed {
-                    //         channel.eof().await.unwrap();
-                    //     }
-                    //     break;
-                    // }
-                    _ => {}
+                    ChannelMsg::ExitStatus { exit_status } => {
+                        debug!("ssh session ended with exit code {exit_status}");
+                        channel.eof().await.unwrap();
+                        break;
+                    }
+                    ChannelMsg::Success => (),
+                    other => {debug!("unhandled ssh channelmsg: {other:?}");}
                 }
            }
         }
