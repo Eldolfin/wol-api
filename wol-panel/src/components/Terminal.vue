@@ -28,17 +28,19 @@ watchEffect(() => {
 onMounted(()=> {
   term.open(terminalElt.value!);
 
-  watch([width, height], () => {
+  watchDebounced([width, height], () => {
+  console.log("terminal size changed, calling fit on it")
     fitAddon.fit();
-  }, {immediate: true})
+    term.refresh(0, term.rows - 1);
+  }, {immediate: true, debounce: 100})
 })
 
 </script>
 <template>
-  <div ref="terminal-parent">
-    <div>
-      Currently connected to '{{terminalState.currentConnectedMachineName}}'
-    </div>
-    <div ref="terminal" :style="{height: '100%'}"></div>
+  <div ref="terminal-parent" :style="{display:'flex', flexFlow: 'column', height:'100%'}">
+    <!-- <div> -->
+      <!-- Currently connected to '{{terminalState.currentConnectedMachineName}}' -->
+    <!-- </div> -->
+    <div ref="terminal" :style="{flex: '1 1 auto'}"></div>
   </div>
 </template>
