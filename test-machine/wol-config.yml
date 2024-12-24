@@ -1,3 +1,5 @@
+ssh:
+  private_key_file: "/home/oscar.ledauphin/.ssh/id_ed25519_github2"
 machines:
   testing-docker-container:
     mac: "02:42:ac:12:00:02"
