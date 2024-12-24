@@ -86,7 +86,8 @@ async fn main() -> anyhow::Result<()> {
 
     // TODO: this doesn't need to be a select anymore, just spawn each tasks
     loop {
-        let (handlers, bg_task) = machine::api::handlers(store.clone(), args.dry_run)?;
+        let (handlers, bg_task) =
+            machine::api::handlers(&config.lock().unwrap(), store.clone(), args.dry_run)?;
         let machine_api = warp::path("machine").and(handlers);
         let routes = api_doc.or(rapidoc_handler).or(machine_api).with(&cors);
         let routes = warp::path(API_PATH.strip_prefix("/").unwrap()).and(routes);

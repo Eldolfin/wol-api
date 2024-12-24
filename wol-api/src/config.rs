@@ -34,10 +34,17 @@ fn default_ssh_port() -> u16 {
     22
 }
 
-#[derive(ToSchema, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct SshConfig {
+    pub private_key_file: PathBuf,
+}
+
+#[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub machines: HashMap<String, MachineCfg>,
+    pub ssh: SshConfig,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq)]

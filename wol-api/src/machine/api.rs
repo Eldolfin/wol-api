@@ -1,5 +1,6 @@
 use super::service::{State, Store, StoreInner, Task};
 use crate::{
+    config::Config,
     consts::{MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
     machine::ssh,
 };
@@ -165,6 +166,7 @@ pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn R
 
 #[expect(clippy::type_complexity, reason = "aie aie aie")]
 pub fn handlers(
+    config: &Config,
     store: Store,
     dry_run: bool,
 ) -> anyhow::Result<(
@@ -229,7 +231,7 @@ pub fn handlers(
         })
     };
 
-    let ssh_handlers = warp::path("ssh").and(ssh::api::handlers(store.clone()));
+    let ssh_handlers = warp::path("ssh").and(ssh::api::handlers(config, store.clone()));
 
     let routes = list
         .or(wake)
