@@ -20,7 +20,7 @@ watchEffect(() => {
   if (terminalState.currentConnectedMachineName.value !== null) {
     term.write(`Connecting to ${terminalState.currentConnectedMachineName.value}...\n\r`)
     const attachAddon = new AttachAddon(
-    new WebSocket(baseUrl + `/api/machine/ssh/${terminalState.currentConnectedMachineName.value}/connect`) );
+      new WebSocket(baseUrl.origin + `/api/machine/ssh/${terminalState.currentConnectedMachineName.value}/connect`));
     term.loadAddon(attachAddon);
   }
 })
