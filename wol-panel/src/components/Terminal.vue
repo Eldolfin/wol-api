@@ -18,17 +18,15 @@ term.loadAddon(fitAddon);
 
 watchEffect(() => {
   if (terminalState.currentConnectedMachineName.value !== null) {
-    term.write(`Connecting to ${terminalState.currentConnectedMachineName.value}...\n`)
+    term.write(`Connecting to ${terminalState.currentConnectedMachineName.value}...\n\r`)
     const attachAddon = new AttachAddon(
-    new WebSocket(baseUrl + `/api/machine/ssh/${terminalState.currentConnectedMachineName.value}/connect`)
-    );
+    new WebSocket(baseUrl + `/api/machine/ssh/${terminalState.currentConnectedMachineName.value}/connect`) );
     term.loadAddon(attachAddon);
   }
 })
 
 onMounted(()=> {
   term.open(terminalElt.value!);
-  term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
 
   watch([width, height], () => {
     fitAddon.fit();
@@ -37,10 +35,10 @@ onMounted(()=> {
 
 </script>
 <template>
-  <div ref="terminal-parent" :style="{height: '100%'}">
+  <div ref="terminal-parent">
     <div>
-    Currently connected to '{{terminalState.currentConnectedMachineName}}'
+      Currently connected to '{{terminalState.currentConnectedMachineName}}'
     </div>
-    <div ref="terminal"></div>
+    <div ref="terminal" :style="{height: '100%'}"></div>
   </div>
 </template>
