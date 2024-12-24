@@ -1,8 +1,9 @@
 export interface TerminalState {
-  currentConnectedMachineName?: string;
+  currentConnectedMachineName: Ref<string | null>,
   connecting: () => boolean,
 }
 
 export const DefaultTerminalState: TerminalState = {
   connecting: () => false,
+  currentConnectedMachineName: ref(null),
 };

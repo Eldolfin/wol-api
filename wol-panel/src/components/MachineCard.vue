@@ -9,6 +9,7 @@ const machine = defineModel<components["schemas"]["Machine"]>("machine", {
   required: true,
 });
 
+const terminalState = inject(terminal_pane_provide)!;
 const theme = useThemeVars();
 const loading = ref(false);
 const terminalOpened = ref(false);
@@ -20,7 +21,6 @@ const button_blocked = computed(
     machine.value.state == "unknown",
 );
 const api = inject(api_client)!;
-const terminal_pane = inject(terminal_pane_provide);
 
 function handle_wake() {
   loading.value = true;
@@ -104,6 +104,7 @@ const avatar_color = computed(() => {
 
 function handleOpenTerminal() {
   terminalOpened.value = true;
+  terminalState.currentConnectedMachineName.value = machine.value.name;
 }
 
 </script>

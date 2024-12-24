@@ -6,6 +6,7 @@ import { type components } from "../lib/api/v1";
 type State = components["schemas"]["StoreInner"];
 const machines_state = ref<State | undefined>(undefined);
 
+// TODO: replace with useWebSocket
 const ws = new WebSocket(wsUrl + "/api/machine/list_ws");
 ws.onmessage = (msg) => {
   const state: State = JSON.parse(msg.data);
@@ -19,11 +20,7 @@ const machines = computed(() => machines_state.value?.machines);
   <n-list style="padding: 10px">
     <template #header> Machines </template>
     <template v-if="machines_state !== undefined">
-      <n-list-item
-        v-for="i in machines!.length"
-        :key="i"
-        style="width: calc(100vw - 10px * 2)"
-      >
+      <n-list-item v-for="i in machines!.length" :key="i" style="width: calc(100vw - 10px * 2)">
         <MachineCard v-model:machine="machines![i - 1]" />
       </n-list-item>
     </template>
