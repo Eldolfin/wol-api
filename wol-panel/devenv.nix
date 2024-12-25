@@ -3,6 +3,7 @@
   packages = [
     pkgs.yarn
     pkgs.nodePackages_latest.prettier
+    pkgs.nodejs_23
     # pkgs.vue-language-server
     # pkgs.nodePackages_latest."@vue/language-server"
   ];
@@ -10,6 +11,12 @@
   env.NODE_OPTIONS = "--max-old-space-size=8192";
 
   languages.typescript.enable = true;
+  languages.javascript = {
+    yarn = {
+      enable = true;
+      install.enable = true;
+    };
+  };
   scripts.hello.exec = ''
     echo hello from $GREET
   '';
