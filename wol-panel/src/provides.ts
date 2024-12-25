@@ -10,3 +10,4 @@ const VITE_WOL_API_URL = import.meta.env.VITE_WOL_API_URL;
 const api_path =
   VITE_WOL_API_URL === "/" ? window.location.href : VITE_WOL_API_URL;
 export const baseUrl = new URL(api_path);
+export const wsUrl = `ws://${baseUrl.host}`;

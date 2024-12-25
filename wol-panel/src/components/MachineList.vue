@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { CloudOffline } from "@vicons/ionicons5";
-import { api_client, baseUrl } from "../provides";
+import { wsUrl } from "../provides";
 import { type components } from "../lib/api/v1";
 
 type State = components["schemas"]["StoreInner"];
 const machines_state = ref<State | undefined>(undefined);
 
-const ws = new WebSocket(baseUrl.origin + "/api/machine/list_ws");
+const ws = new WebSocket(wsUrl + "/api/machine/list_ws");
 ws.onmessage = (msg) => {
   const state: State = JSON.parse(msg.data);
   machines_state.value = state;
