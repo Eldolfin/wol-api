@@ -8,3 +8,5 @@ devenv.local.nix
 # pre-commit
 .pre-commit-config.yaml
 wol-panel/.eslintcache
+wol-panel/.yarn/releases
+wol-panel/.yarnrc
