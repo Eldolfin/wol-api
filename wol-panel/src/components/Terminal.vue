@@ -33,7 +33,6 @@ watchEffect(() => {
 
 onMounted(() => {
   term.open(terminalElt.value!);
-
   watchDebounced(
     [width, height],
     () => {
@@ -44,9 +43,20 @@ onMounted(() => {
     { immediate: true, debounce: 50 },
   );
 });
+
+function handleKeyDown(domEvent: KeyboardEvent) {
+  if (domEvent.getModifierState("Control") && domEvent.key == "+") {
+    domEvent.preventDefault();
+    term.options.fontSize = (term.options.fontSize || 0) + 10;
+  } else if (domEvent.getModifierState("Control") && domEvent.key == "-") {
+    domEvent.preventDefault();
+    term.options.fontSize = (term.options.fontSize || 0) - 10;
+  }
+}
 </script>
 <template>
   <div
+    @keydown="handleKeyDown"
     ref="terminal-parent"
     :style="{ display: 'flex', flexFlow: 'column', height: '100%' }"
   >
