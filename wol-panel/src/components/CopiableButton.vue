@@ -3,7 +3,7 @@ const value = defineModel<string>("value", {
   required: true,
 });
 
-const { copy, copied, isSupported } = useClipboard({ source: value });
+const { copy, copied } = useClipboard({ source: value });
 
 function handleClick() {
   copy();

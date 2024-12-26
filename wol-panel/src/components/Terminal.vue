@@ -52,9 +52,9 @@ function handleKeyDown(domEvent: KeyboardEvent) {
 </script>
 <template>
   <div
-    @keydown="handleKeyDown"
     ref="terminal-parent"
     :style="{ display: 'flex', flexFlow: 'column', height: '100%' }"
+    @keydown="handleKeyDown"
   >
     <div ref="terminal" :style="{ flex: '1 1 auto' }"></div>
   </div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CloudOffline } from "@vicons/ionicons5";
 import { wsUrl } from "../provides";
-import { type components } from "../lib/api/v1";
+import type { components } from "../lib/api/v1";
 
 type State = components["schemas"]["StoreInner"];
 const machines_state = ref<State | undefined>(undefined);
