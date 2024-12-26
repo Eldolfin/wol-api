@@ -36,7 +36,7 @@ fn default_ssh_port() -> u16 {
 
 #[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub struct SshConfig {
+pub struct Ssh {
     pub private_key_file: PathBuf,
 }
 
@@ -44,7 +44,7 @@ pub struct SshConfig {
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub machines: HashMap<String, MachineCfg>,
-    pub ssh: SshConfig,
+    pub ssh: Ssh,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
