@@ -6,6 +6,7 @@ use std::{
 use tokio::sync;
 use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
+use utoipa_scalar::Scalar;
 use warp::{reply, Filter as _};
 use wol_relay_server::{
     config::{self},
@@ -61,9 +62,15 @@ async fn main() -> anyhow::Result<()> {
     let (config, mut config_changed) = config::open(&args.config_path, CONFIG_AUTO_RELOAD)?;
 
     let api_doc = warp::path!("api-doc.json").map(|| reply::json(&ApiDoc::openapi()));
-    let rapidoc_handler = warp::path("rapidoc")
-        .and(warp::get())
-        .map(|| reply::html(RapiDoc::new("/api/api-doc.json").to_html()));
+    let rapidoc_handler =
+        warp::path!("rapidoc").map(|| reply::html(RapiDoc::new("/api/api-doc.json").to_html()));
+
+    let scalar_handler = warp::path!("doc").map(move || {
+        let html = Scalar::new(ApiDoc::openapi())
+            .custom_html(include_str!("../res/scalar.html"))
+            .to_html();
+        reply::html(html)
+    });
 
     // let cors = warp::cors().allow_origin("http://localhost:3000").allow_methods(vec!["GET", "POST"]);
     // let cors = warp::cors().allow_any_origin().allow_methods(["GET", "POST", "OPTIONS"]);
@@ -89,7 +96,11 @@ async fn main() -> anyhow::Result<()> {
         let (handlers, bg_task) =
             machine::api::handlers(&config.lock().unwrap(), store.clone(), args.dry_run)?;
         let machine_api = warp::path("machine").and(handlers);
-        let routes = api_doc.or(rapidoc_handler).or(machine_api).with(&cors);
+        let routes = api_doc
+            .or(scalar_handler)
+            .or(rapidoc_handler)
+            .or(machine_api)
+            .with(&cors);
         let routes = warp::path(API_PATH.strip_prefix("/").unwrap()).and(routes);
         tokio::select! {
             biased;
