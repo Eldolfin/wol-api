@@ -32,22 +32,24 @@ pub struct Api;
         ("name" = String, Path, description = "Name of the machine to wake")
     ),
 )]
+
+// TODO: refactor the logic in a service
 async fn connect(
     ssh_private_key_path: PathBuf,
     machine_name: &str,
     store: Store,
     websocket: WebSocket,
 ) {
+    // TODO: unhardcode size, it should be transfered by the client in the ws
+    const W: u32 = 80;
+    const H: u32 = 60;
+
     // TODO: move as much initialisation as possible in a constructor?
     // TODO: keep in mind that the config is hot reloading
     const USER: &str = "oscar";
     let (mut tx, mut rx) = websocket.split();
     let key_pair = load_secret_key(ssh_private_key_path, None).unwrap();
-    let config = client::Config {
-        // inactivity_timeout: Some(Duration::from_secs(5)),
-        ..Default::default()
-    };
-    let config = Arc::new(config);
+    let config = Arc::new(client::Config::default());
     let sh = Client {};
     let machine = store
         .lock()
@@ -66,15 +68,9 @@ async fn connect(
         .await
         .unwrap();
 
-    if !auth_res {
-        panic!("Authentication (with publickey) failed");
-    }
+    assert!(auth_res, "Authentication (with publickey) failed");
 
     let mut channel = session.channel_open_session().await.unwrap();
-
-    // TODO: unhardcode size, it should be transfered by the client in the ws
-    const W: u32 = 80;
-    const H: u32 = 60;
 
     channel
         .request_pty(false, "xterm", W, H, 0, 0, &[])
@@ -87,7 +83,8 @@ async fn connect(
             r = rx.next()=> {
                 match r {
                     Some(Ok(data)) => {
-                        channel.data(data.as_bytes()).await.unwrap()},
+                        channel.data(data.as_bytes()).await.unwrap();
+                    },
                     Some(Err(_)) => unreachable!("Idk how this branch can be reached..."),
                     _ => {
                         debug!("ssh session: client disconnected");
@@ -99,7 +96,7 @@ async fn connect(
             Some(msg) = channel.wait() => {
                 match msg {
                     // Write data to the terminal
-                    ChannelMsg::Data { ref data } => {
+                    ChannelMsg::Data { data } => {
                         tx.send(Message::binary(data.to_vec())).await.unwrap();
                     },
                     // The command has returned an exit code
@@ -116,9 +113,13 @@ async fn connect(
     }
 }
 
-struct Client {}
+struct Client;
 
 #[async_trait]
+#[expect(
+    clippy::missing_trait_methods,
+    reason = "we don't need to hook to every event"
+)]
 impl client::Handler for Client {
     type Error = russh::Error;
 
@@ -137,16 +138,16 @@ pub fn handlers(
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     let connect = {
         let store = store.clone();
-        let ssh_private_key_path = config.ssh.private_key_file.to_owned();
+        let ssh_private_key_path = config.ssh.private_key_file.clone();
         warp::path!(String / "connect")
             .and(warp::ws())
             .map(move |name: String, ws: ws::Ws| {
                 // And then our closure will be called when it completes...
                 let store = store.clone();
-                let ssh_private_key_path = ssh_private_key_path.to_owned();
+                let ssh_private_key_path = ssh_private_key_path.clone();
                 ws.on_upgrade(move |websocket| {
                     let store = store.clone();
-                    let ssh_private_key_path = ssh_private_key_path.to_owned();
+                    let ssh_private_key_path = ssh_private_key_path.clone();
                     async move {
                         connect(ssh_private_key_path, &name, store, websocket).await;
                     }
