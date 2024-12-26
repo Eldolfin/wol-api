@@ -1,11 +1,14 @@
 default:
     @just --list
 
+export UID := `id -u`
+export GID := `id -g`
+
 run:
     alacritty -o 'font.size=10' -e sh -c "cd ./wol-panel && npm run dev" &
-    alacritty -o 'font.size=10' -e sh -c "cd ./wol-api && nix develop -c just watch -- -c ../test-machine/wol-config.yml" &
+    alacritty -o 'font.size=10' -e sh -c "cd ./wol-api && nix develop -c just watch -- -c ../dev/wol-config.yml" &
     docker context use default
-    cd ./test-machine && docker compose up -d --wait
+    cd ./dev && docker compose up -d --wait
     curl \
         --retry-connrefused \
         --connect-timeout 30 \

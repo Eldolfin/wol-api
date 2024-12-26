@@ -1,0 +1,7 @@
+FROM node:23-alpine3.19 AS builder
+WORKDIR /app
+COPY yarn.lock package.json ./
+
+RUN yarn install
+
+CMD [ "yarn", "dev" ]
