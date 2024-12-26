@@ -1,0 +1,26 @@
+services:
+  test-machine:
+    image: lscr.io/linuxserver/openssh-server:latest
+    container_name: test-machine
+    environment:
+      - PUID=1000
+      - PGID=100
+      - TZ=Etc/UTC
+      - SUDO_ACCESS=true
+      - USER_NAME=oscar
+      - LOG_STDOUT=true
+    volumes:
+      - ./config/sshd/config:/config
+    ports:
+      - 2222:2222
+    restart: unless-stopped
+  front:
+    build:
+      context: ../wol-panel
+      dockerfile: ../wol-panel/Dockerfile.dev
+    user: "${UID}:${GID}"
+    volumes:
+      - ../wol-panel:/app
+    ports:
+      - 3000:3000
+    restart: unless-stopped

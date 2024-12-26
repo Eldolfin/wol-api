@@ -1,4 +1,3 @@
-# note: never use the :latest tag in a production site
 FROM node:23-alpine3.19 AS builder
 WORKDIR /app
 COPY yarn.lock package.json ./
@@ -23,4 +22,3 @@ FROM caddy:2.9-alpine
 
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY --from=builder /app/.output/public/ /var/www
-
