@@ -114,7 +114,7 @@ async fn connect(
 
     loop {
         tokio::select! {
-            client_data = rx.next()=> {
+            client_data = rx.next() => {
                 match client_data {
                     Some(Ok(data)) => {
                         if data.is_binary() {
@@ -129,7 +129,9 @@ async fn connect(
                             };
                             match client_message.message {
                                 SshClientMessageType::Input(input) => channel.data(Cursor::new(input)).await.unwrap(),
-                                _=> todo!("Handle message {client_message:?}")
+                                SshClientMessageType::ChangeSize((cols, rows)) => {
+                                    channel.window_change( cols, rows, 0, 0).await.unwrap();
+                                }
                             }
                         }
                     },
