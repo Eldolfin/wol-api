@@ -43,24 +43,26 @@ watchEffect(() => {
 
 onMounted(() => {
   term.open(terminalElt.value!);
-  watchDebounced(
-    [width, height],
-    () => {
-      terminalElt.value!.style.height = "0";
-      fitAddon.fit();
-      term.refresh(0, term.rows - 1);
-    },
-    { immediate: true, debounce: 50 },
-  );
+  watchDebounced([width, height], fit, {
+    immediate: true,
+    debounce: 50,
+  });
 });
+
+function fit() {
+  terminalElt.value!.style.height = "0";
+  fitAddon.fit();
+}
 
 function handleKeyDown(domEvent: KeyboardEvent) {
   if (domEvent.getModifierState("Control") && domEvent.key == "+") {
     domEvent.preventDefault();
-    term.options.fontSize = (term.options.fontSize || 0) + 10;
+    term.options.fontSize = (term.options.fontSize || 0) + 2;
+    fit();
   } else if (domEvent.getModifierState("Control") && domEvent.key == "-") {
     domEvent.preventDefault();
-    term.options.fontSize = (term.options.fontSize || 0) - 10;
+    term.options.fontSize = (term.options.fontSize || 0) - 2;
+    fit();
   }
 }
 </script>
