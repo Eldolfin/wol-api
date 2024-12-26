@@ -1,3 +1,9 @@
 export interface TerminalState {
-  connectedMachines: Ref<string[]>;
+  connectedMachines: Ref<TerminalSession[]>;
+  connectToMachine: (machineName: string) => void;
+}
+
+export interface TerminalSession {
+  machineName: string;
+  sessionId: number;
 }

@@ -108,7 +108,7 @@ const avatar_color = computed(() => {
 
 function handleOpenTerminal() {
   terminalOpened.value = true;
-  terminalState.connectedMachines.value.push(machine.value.name);
+  terminalState.connectToMachine(machine.value.name);
 }
 </script>
 <template>
