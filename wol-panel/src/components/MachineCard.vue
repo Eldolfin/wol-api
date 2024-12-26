@@ -2,7 +2,11 @@
 import { useThemeVars } from "naive-ui";
 import type { components } from "../lib/api/v1";
 import { unreachable } from "../lib/utils/rust";
-import { Power, ImageOutline as ImageOutlineIcon, LogInOutline } from "@vicons/ionicons5";
+import {
+  Power,
+  ImageOutline as ImageOutlineIcon,
+  LogInOutline,
+} from "@vicons/ionicons5";
 import { api_client, terminal_pane_provide } from "../provides";
 
 const machine = defineModel<components["schemas"]["Machine"]>("machine", {
@@ -104,9 +108,8 @@ const avatar_color = computed(() => {
 
 function handleOpenTerminal() {
   terminalOpened.value = true;
-  terminalState.currentConnectedMachineName.value = machine.value.name;
+  terminalState.connectedMachines.value.push(machine.value.name);
 }
-
 </script>
 <template>
   <n-card :style="{ borderRadius: theme.borderRadius }" hoverable>
@@ -126,16 +129,26 @@ function handleOpenTerminal() {
         {{ `mac: ${machine.config.mac}` }}
         <br />
         <n-space vertical>
-        <CopiableButton :value="machine.config.ip"/>
-        <CopiableButton :value="`ssh -p ${machine.config['ssh-port']} oscar@${machine.config.ip}`"/>
+          <CopiableButton :value="machine.config.ip" />
+          <CopiableButton
+            :value="`ssh -p ${machine.config['ssh-port']} oscar@${machine.config.ip}`"
+          />
         </n-space>
       </template>
       <template #action>
         <n-button-group>
           <n-space size="small">
-            <n-switch size="large" :loading="button_blocked" :value="machine.state === 'on'"
-              @update:value="handleSwitchMachineState" />
-            <n-button v-for="(task, i) in machine.config.tasks" :key="i" @click="handleQueueTask(i)">
+            <n-switch
+              size="large"
+              :loading="button_blocked"
+              :value="machine.state === 'on'"
+              @update:value="handleSwitchMachineState"
+            />
+            <n-button
+              v-for="(task, i) in machine.config.tasks"
+              :key="i"
+              @click="handleQueueTask(i)"
+            >
               <n-image width="30" :src="task.icon_url" preview-disabled>
                 <template #error>
                   <n-icon :size="30" color="lightGrey">
@@ -144,7 +157,7 @@ function handleOpenTerminal() {
                 </template>
               </n-image>
             </n-button>
-             <n-button :loading="loading" @click="handleOpenTerminal">
+            <n-button :loading="loading" @click="handleOpenTerminal">
               <template #icon>
                 <n-icon>
                   <LogInOutline />
@@ -154,7 +167,7 @@ function handleOpenTerminal() {
             </n-button>
           </n-space>
         </n-button-group>
-    </template>
+      </template>
     </n-thing>
   </n-card>
 </template>

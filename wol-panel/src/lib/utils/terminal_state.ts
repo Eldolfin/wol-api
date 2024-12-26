@@ -1,9 +1,3 @@
 export interface TerminalState {
-  currentConnectedMachineName: Ref<string | null>,
-  connecting: () => boolean,
+  connectedMachines: Ref<string[]>;
 }
-
-export const DefaultTerminalState: TerminalState = {
-  connecting: () => false,
-  currentConnectedMachineName: ref(null),
-};

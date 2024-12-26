@@ -20,26 +20,18 @@ const machines = computed(() => machines_state.value?.machines);
   <n-list>
     <template #header> Machines </template>
     <template v-if="machines_state !== undefined">
-      <n-list-item v-for="i in machines!.length" :key="i" style="width: calc(100vw - 10px * 2)">
+      <n-list-item v-for="i in machines!.length" :key="i">
         <MachineCard v-model:machine="machines![i - 1]" />
       </n-list-item>
     </template>
-    <!-- <template v-else-if="status == 'idle'"> Loading... </template> -->
     <template v-else>
       <n-h2>
         <n-text type="error" strong>
           <n-icon>
             <CloudOffline />
           </n-icon>
-          <!-- {{ error?.name }}: {{ error?.message }} -->
         </n-text>
       </n-h2>
     </template>
   </n-list>
 </template>
-
-<style>
-.machine-action {
-  margin: 10px;
-}
-</style>

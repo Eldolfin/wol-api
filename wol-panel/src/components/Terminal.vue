@@ -3,10 +3,9 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { AttachAddon } from "@xterm/addon-attach";
-import { baseUrl, terminal_pane_provide } from "../provides";
+import { baseUrl } from "../provides";
 
-const terminalState = inject(terminal_pane_provide)!;
-
+const machineName = defineModel<string>("machineName", { required: true });
 const terminalParentElt = useTemplateRef<HTMLDivElement>("terminal-parent");
 const terminalElt = useTemplateRef<HTMLDivElement>("terminal");
 const term = new Terminal();
@@ -17,14 +16,11 @@ const fitAddon = new FitAddon();
 term.loadAddon(fitAddon);
 
 watchEffect(() => {
-  if (terminalState.currentConnectedMachineName.value !== null) {
-    term.write(
-      `Connecting to ${terminalState.currentConnectedMachineName.value}...\n\r`,
-    );
+  if (machineName.value !== null) {
+    term.write(`Connecting to ${machineName.value}...\n\r`);
     const attachAddon = new AttachAddon(
       new WebSocket(
-        baseUrl.origin +
-          `/api/machine/ssh/${terminalState.currentConnectedMachineName.value}/connect`,
+        baseUrl.origin + `/api/machine/ssh/${machineName.value}/connect`,
       ),
     );
     term.loadAddon(attachAddon);
@@ -60,9 +56,6 @@ function handleKeyDown(domEvent: KeyboardEvent) {
     ref="terminal-parent"
     :style="{ display: 'flex', flexFlow: 'column', height: '100%' }"
   >
-    <!-- <div> -->
-    <!-- Currently connected to '{{terminalState.currentConnectedMachineName}}' -->
-    <!-- </div> -->
     <div ref="terminal" :style="{ flex: '1 1 auto' }"></div>
   </div>
 </template>
