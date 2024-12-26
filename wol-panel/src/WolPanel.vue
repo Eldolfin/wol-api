@@ -3,22 +3,65 @@ import "./main.css";
 
 import createClient from "openapi-fetch";
 import { api_client, baseUrl, terminal_pane_provide } from "./provides";
-import { DefaultTerminalState } from "./lib/utils/terminal_state";
+import { KeepAlive } from "vue";
 
+const connectedMachines = ref([]);
+const focusedTerminal = ref(0);
+const splitSize = ref(1);
+
+provide(terminal_pane_provide, { connectedMachines });
 provide(api_client, createClient({ baseUrl: baseUrl.origin }));
-provide(terminal_pane_provide, DefaultTerminalState)
 
+function handleCloseTerminal(index: number) {
+  connectedMachines.value.splice(index, 1);
+}
+
+watch(
+  [connectedMachines],
+  () => {
+    if (connectedMachines.value.length > 0 && splitSize.value > 0.9) {
+      splitSize.value = 0.5;
+    }
+  },
+  { deep: true },
+);
 </script>
 <template>
-  <n-split direction="vertical" style="height: 100vh; width: 100vw">
+  <n-split
+    direction="vertical"
+    :style="{ height: '100%' }"
+    v-model:size="splitSize"
+  >
     <template #1>
       <n-card :style="{ height: '100%' }">
-        <MachineList :style="{ height: '100%' }"/>
+        <MachineList :style="{ height: '100%' }" />
       </n-card>
     </template>
-    <template #2>
-      <n-card :style="{ height: '100%' }" closable title="Remote Terminal">
-        <Terminal :style="{ height: '100%' }"/>
+    <template #2 v-if="connectedMachines.length > 0">
+      <n-card :style="{ height: '100%' }">
+        <n-tabs
+          v-model:value="focusedTerminal"
+          type="card"
+          closable
+          @close="handleCloseTerminal"
+          :style="{ height: '100%' }"
+        >
+          <n-tab-pane
+            v-for="(machineName, i) in connectedMachines"
+            :key="i"
+            :tab="machineName"
+            :name="i"
+            :style="{ height: '100%' }"
+            display-directive="show"
+          >
+            <KeepAlive>
+              <Terminal
+                :style="{ height: '100%' }"
+                :machine-name="machineName"
+              />
+            </KeepAlive>
+          </n-tab-pane>
+        </n-tabs>
       </n-card>
     </template>
   </n-split>
