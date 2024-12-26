@@ -36,6 +36,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/machine/ssh/{name}/connect": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["connect"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/machine/{name}/shutdown": {
     parameters: {
       query?: never;
@@ -107,6 +123,25 @@ export interface components {
       "ssh-port"?: number;
       tasks?: components["schemas"]["TaskCfg"][];
     };
+    /** @description Json message sent by the client's terminal */
+    SshClientMessage: {
+      message: components["schemas"]["SshClientMessageType"];
+    };
+    SshClientMessageType:
+      | {
+          /** @description The client changed the size of the terminal */
+          change_size: [number, number];
+        }
+      | {
+          /** @description The client typed something in the terminal */
+          input: string;
+        };
+    SshServerMessage: {
+      message: components["schemas"]["SshServerMessageType"];
+    };
+    SshServerMessageType: {
+      terminal_data: string;
+    };
     /**
      * @example on
      * @enum {string}
@@ -172,6 +207,27 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["StoreInner"];
         };
+      };
+    };
+  };
+  connect: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Name of the machine to wake */
+        name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Switch to websocket and transfer terminal data */
+      101: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

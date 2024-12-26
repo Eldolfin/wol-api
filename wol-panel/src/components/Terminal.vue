@@ -2,8 +2,9 @@
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { AttachAddon } from "@xterm/addon-attach";
 import { baseUrl } from "../provides";
+import { AttachAddon } from "../lib/xterm-js-addons/attach";
+import type { components } from "../lib/api/v1.d.ts";
 
 const machineName = defineModel<string>("machineName", { required: true });
 const emit = defineEmits<{
@@ -25,7 +26,16 @@ watchEffect(() => {
     const ws = new WebSocket(
       baseUrl.origin + `/api/machine/ssh/${machineName.value}/connect`,
     );
-    const attachAddon = new AttachAddon(ws);
+    const attachAddon = new AttachAddon(ws, {
+      messageWrapper: (message) => {
+        const msg: components["schemas"]["SshClientMessage"] = {
+          message: {
+            input: message,
+          },
+        };
+        return JSON.stringify(msg);
+      },
+    });
     term.loadAddon(attachAddon);
     ws.onclose = () => emit("close");
   }

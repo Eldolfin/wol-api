@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{io::Cursor, path::PathBuf, sync::Arc};
 
 use async_trait::async_trait;
 use futures_util::{SinkExt as _, StreamExt as _};
@@ -44,6 +44,9 @@ pub enum SshClientMessageType {
     /// The client changed the size of the terminal
     #[schema(example = "json!((80, 32))")]
     ChangeSize((u32, u32)),
+    /// The client typed something in the terminal
+    #[schema(example = "echo hello")]
+    Input(String),
 }
 
 /// Json message sent by the client's terminal
@@ -115,7 +118,7 @@ async fn connect(
                 match client_data {
                     Some(Ok(data)) => {
                         if data.is_binary() {
-                        channel.data(data.as_bytes()).await.unwrap();
+                            channel.data(data.as_bytes()).await.unwrap();
                         }
                         else {
                             let client_message: SshClientMessage = match serde_json::from_str(data.to_str().unwrap()) {
@@ -124,7 +127,10 @@ async fn connect(
                                 Err(parse_error) => {
                                     error!("could not parse client message: {parse_error}"); break;},
                             };
-                            debug!("received client message: {:#?}", client_message);
+                            match client_message.message {
+                                SshClientMessageType::Input(input) => channel.data(Cursor::new(input)).await.unwrap(),
+                                _=> todo!("Handle message {client_message:?}")
+                            }
                         }
                     },
                     Some(Err(_)) => unreachable!("Idk how this branch can be reached..."),
