@@ -20,38 +20,34 @@ const { width, height } = useElementSize(terminalParentElt);
 const fitAddon = new FitAddon();
 term.loadAddon(fitAddon);
 
-watchEffect(() => {
-  if (machineName.value !== null) {
-    term.write(`Connecting to ${machineName.value}...\n\r`);
-    const ws = new WebSocket(
-      baseUrl.origin + `/api/machine/ssh/${machineName.value}/connect`,
-    );
-    const attachAddon = new AttachAddon(ws, {
-      messageWrapper: (message) => {
-        const msg: components["schemas"]["SshClientMessage"] = {
-          message: {
-            input: message,
-          },
-        };
-        return JSON.stringify(msg);
-      },
-    });
-    term.loadAddon(attachAddon);
-    ws.onclose = () => emit("close");
-  }
+const ws = new WebSocket(
+  baseUrl.origin + `/api/machine/ssh/${machineName.value}/connect`,
+);
+const attachAddon = new AttachAddon(ws, {
+  messageWrapper: (message) => {
+    return encodeMessage({ input: message });
+  },
+});
+term.loadAddon(attachAddon);
+ws.onclose = () => emit("close");
+watchDebounced([width, height], fit, {
+  immediate: true,
+  debounce: 50,
 });
 
 onMounted(() => {
   term.open(terminalElt.value!);
-  watchDebounced([width, height], fit, {
-    immediate: true,
-    debounce: 50,
-  });
 });
+
+function encodeMessage(message: components["schemas"]["SshClientMessageType"]) {
+  const msg: components["schemas"]["SshClientMessage"] = { message };
+  return JSON.stringify(msg);
+}
 
 function fit() {
   terminalElt.value!.style.height = "0";
   fitAddon.fit();
+  ws.send(encodeMessage({ change_size: [term.cols, term.rows] }));
 }
 
 function handleKeyDown(domEvent: KeyboardEvent) {
