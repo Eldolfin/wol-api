@@ -3,7 +3,7 @@ authors = ["eldolfin <oscar.ledauphin@epita.fr>"]
 edition = "2021"
 # If you change the name here, you must also do it in flake.nix (and run `cargo generate-lockfile` afterwards)
 name = "wol-relay-server"
-description = "A simple Rust project using Nix"
+description = "A service that allows you to turn on and off computer remotely and more"
 version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

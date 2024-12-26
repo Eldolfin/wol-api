@@ -2,13 +2,14 @@ use std::{path::PathBuf, sync::Arc};
 
 use async_trait::async_trait;
 use futures_util::{SinkExt as _, StreamExt as _};
-use log::debug;
+use log::{debug, error};
 use russh::{
     client::{self},
     keys::{key::PrivateKeyWithHashAlg, load_secret_key, ssh_key},
     ChannelMsg,
 };
-use utoipa::OpenApi;
+use serde::{Deserialize, Serialize};
+use utoipa::{OpenApi, ToSchema};
 use warp::{
     filters::ws::{self, Message, WebSocket},
     reject::Rejection,
@@ -19,8 +20,38 @@ use warp::{
 use crate::{config::Config, machine::service::Store};
 
 #[derive(OpenApi)]
-#[openapi(paths(connect))]
+#[openapi(
+    paths(connect),
+    components(schemas(SshServerMessage, SshClientMessage))
+)]
 pub struct Api;
+
+#[derive(Clone, Debug, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SshServerMessageType {
+    TerminalData(String),
+}
+
+#[derive(Clone, Debug, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SshServerMessage {
+    pub message: SshServerMessageType,
+}
+
+#[derive(Clone, Debug, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SshClientMessageType {
+    /// The client changed the size of the terminal
+    #[schema(example = "json!((80, 32))")]
+    ChangeSize((u32, u32)),
+}
+
+/// Json message sent by the client's terminal
+#[derive(Clone, Debug, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SshClientMessage {
+    pub message: SshClientMessageType,
+}
 
 #[utoipa::path(
     get,
@@ -80,10 +111,21 @@ async fn connect(
 
     loop {
         tokio::select! {
-            r = rx.next()=> {
-                match r {
+            client_data = rx.next()=> {
+                match client_data {
                     Some(Ok(data)) => {
+                        if data.is_binary() {
                         channel.data(data.as_bytes()).await.unwrap();
+                        }
+                        else {
+                            let client_message: SshClientMessage = match serde_json::from_str(data.to_str().unwrap()) {
+
+                                Ok(msg) => msg,
+                                Err(parse_error) => {
+                                    error!("could not parse client message: {parse_error}"); break;},
+                            };
+                            debug!("received client message: {:#?}", client_message);
+                        }
                     },
                     Some(Err(_)) => unreachable!("Idk how this branch can be reached..."),
                     _ => {
@@ -92,7 +134,6 @@ async fn connect(
                     },
                 };
             },
-            // There's an event available on the session channel
             Some(msg) = channel.wait() => {
                 match msg {
                     // Write data to the terminal
