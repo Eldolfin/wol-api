@@ -3,7 +3,6 @@ import "./main.css";
 
 import createClient from "openapi-fetch";
 import { api_client, baseUrl, terminal_pane_provide } from "./provides";
-import { KeepAlive } from "vue";
 
 const connectedMachines = ref([]);
 const focusedTerminal = ref(0);
@@ -28,23 +27,23 @@ watch(
 </script>
 <template>
   <n-split
+    v-model:size="splitSize"
     direction="vertical"
     :style="{ height: '100%' }"
-    v-model:size="splitSize"
   >
     <template #1>
       <n-card :style="{ height: '100%' }">
         <MachineList :style="{ height: '100%' }" />
       </n-card>
     </template>
-    <template #2 v-if="connectedMachines.length > 0">
+    <template v-if="connectedMachines.length > 0" #2>
       <n-card :style="{ height: '100%' }">
         <n-tabs
           v-model:value="focusedTerminal"
           type="card"
           closable
-          @close="handleCloseTerminal"
           :style="{ height: '100%' }"
+          @close="handleCloseTerminal"
         >
           <n-tab-pane
             v-for="(machineName, i) in connectedMachines"
