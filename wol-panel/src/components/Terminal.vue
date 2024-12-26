@@ -6,6 +6,10 @@ import { AttachAddon } from "@xterm/addon-attach";
 import { baseUrl } from "../provides";
 
 const machineName = defineModel<string>("machineName", { required: true });
+const emit = defineEmits<{
+  (e: "close"): void;
+}>();
+
 const terminalParentElt = useTemplateRef<HTMLDivElement>("terminal-parent");
 const terminalElt = useTemplateRef<HTMLDivElement>("terminal");
 const term = new Terminal();
@@ -18,12 +22,12 @@ term.loadAddon(fitAddon);
 watchEffect(() => {
   if (machineName.value !== null) {
     term.write(`Connecting to ${machineName.value}...\n\r`);
-    const attachAddon = new AttachAddon(
-      new WebSocket(
-        baseUrl.origin + `/api/machine/ssh/${machineName.value}/connect`,
-      ),
+    const ws = new WebSocket(
+      baseUrl.origin + `/api/machine/ssh/${machineName.value}/connect`,
     );
+    const attachAddon = new AttachAddon(ws);
     term.loadAddon(attachAddon);
+    ws.onclose = () => emit("close");
   }
 });
 
