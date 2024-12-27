@@ -1,3 +1,3 @@
 {pkgs, ...}: {
-  packages = [pkgs.just];
+  packages = [pkgs.just pkgs.act];
 }

@@ -4,7 +4,7 @@ use anyhow::Context as _;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::{
-    net::IpAddr,
+    net::{SocketAddr, ToSocketAddrs as _},
     sync::{self, Arc},
     time::Duration,
 };
@@ -58,7 +58,7 @@ pub struct Machine {
     pub tasks: Vec<Task>,
     pub config: config::MachineCfg,
     #[serde(skip_serializing)]
-    pub ip: IpAddr,
+    pub addr: SocketAddr,
 }
 
 impl Machine {
@@ -66,7 +66,7 @@ impl Machine {
         debug!("Checking state for {}", self.name);
 
         let ping_res = ping_rs::send_ping_async(
-            &self.ip,
+            &self.addr.ip(),
             Duration::from_secs(1),
             Arc::new(&[1, 2, 3, 4]),
             None,
@@ -102,18 +102,15 @@ impl Machine {
         }
     }
     fn ssh(&self) -> Command {
-        debug!(
-            "sshing into oscar@{}:{}",
-            self.config.ip, self.config.ssh_port
-        );
+        debug!("sshing into oscar@{}", self.addr);
         let mut cmd = Command::new("ssh");
         cmd.arg("-i")
             .arg("~/.ssh/id_ed25519")
             .arg("-o")
             .arg("StrictHostKeyChecking=no")
             .arg("-p")
-            .arg(self.config.ssh_port.to_string())
-            .arg(format!("oscar@{}", self.config.ip));
+            .arg(self.addr.port().to_string())
+            .arg(format!("oscar@{}", self.addr.ip()));
         cmd
     }
 
@@ -194,10 +191,12 @@ impl Machine {
         Ok(Self {
             config: config.to_owned(),
             name: name.to_owned(),
-            ip: config
+            addr: config
                 .ip
-                .parse()
-                .with_context(|| format!("Could not parse '{name}' ip"))?,
+                .to_socket_addrs()
+                .with_context(|| format!("Could not parse '{name}' ip"))?
+                .next()
+                .context("Error while resolving '{name}' ip")?,
             state: State::default(),
             tasks: Vec::new(),
         })

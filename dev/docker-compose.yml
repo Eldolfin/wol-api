@@ -9,8 +9,10 @@ services:
       - SUDO_ACCESS=true
       - USER_NAME=oscar
       - LOG_STDOUT=true
+      - PUBLIC_KEY_FILE=/ssh/public_key
     volumes:
       - ./config/sshd/config:/config
+      - ./ssh/id_ed25519.pub:/ssh/public_key
     ports:
       - 2222:2222
     restart: unless-stopped
@@ -31,8 +33,8 @@ services:
     environment:
       - RUST_LOG=debug
     volumes:
-      - "/home/oscar/Prog/wol/dev/wol-config.yml:/app/config.yml"
-      - "/home/oscar/.ssh/id_ed25519:/root/.ssh/id_ed25519"
+      - "./wol-config.docker.yml:/app/config.yml"
+      - "./ssh:/home/oscar/.ssh/"
   front-tests:
     build:
       context: ../wol-panel
@@ -43,3 +45,7 @@ services:
     ports:
       - 9323:9323
     restart: unless-stopped
+    depends_on:
+      - front
+      - back
+      - test-machine

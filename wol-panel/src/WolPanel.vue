@@ -54,6 +54,7 @@ watch(
       v-model:size="splitSize"
       direction="vertical"
       :style="{ height: '100%' }"
+      :disabled="connectedMachines.length === 0"
     >
       <template #1>
         <n-card :style="{ height: '100%' }">
@@ -70,7 +71,7 @@ watch(
             @close="handleCloseTerminal"
           >
             <n-tab-pane
-              v-for="(session, i) in connectedMachines"
+              v-for="session in connectedMachines"
               :key="session.sessionId"
               :tab="session.machineName"
               :name="session.sessionId"
