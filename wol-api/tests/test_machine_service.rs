@@ -16,10 +16,9 @@ async fn machine_wake_shutdown_test_dry_run() -> anyhow::Result<()> {
     let machine = store
         .by_name_mut(config.machines.keys().next().unwrap())
         .unwrap();
-    assert_eq!(machine.name, "testing-docker-container");
+    assert_eq!(machine.name, "machine1");
     assert_eq!(machine.config.mac, "02:42:ac:12:00:02");
-    assert_eq!(machine.config.ip, "127.0.0.1");
-    assert_eq!(machine.config.ssh_port, 2222);
+    assert_eq!(machine.config.ip, "127.0.0.1:2222");
     assert_eq!(
         machine.state,
         State::Unknown,

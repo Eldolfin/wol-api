@@ -1,30 +1,24 @@
 use std::{
-    collections::HashMap,
     fs::{self, File},
     io::Write as _,
     time::Duration,
 };
 
 use anyhow::{Context as _, Result};
+use figment::{
+    providers::{Format as _, Yaml},
+    Figment,
+};
 use tempfile::TempDir;
 use tokio::time::timeout;
-use wol_relay_server::config::{self, Config, MachineCfg};
+use wol_relay_server::config::{self, Config};
 
 fn test_config() -> Config {
-    Config {
-        machines: HashMap::from([(
-            "machine1".into(),
-            MachineCfg {
-                ip: "192.168.1.167".into(),
-                mac: "f4:93:9f:eb:56:a8".into(),
-                ssh_port: 22,
-                tasks: vec![],
-            },
-        )]),
-        ssh: config::Ssh {
-            private_key_file: "~/.ssh/id_ed25519".into(),
-        },
-    }
+    Figment::new()
+        .merge(Yaml::string(include_str!("./simple_config.yml")))
+        .extract()
+        .context("Failed to parse config file")
+        .unwrap()
 }
 
 #[tokio::test]
@@ -94,12 +88,8 @@ async fn config_reload_multiple_times() -> Result<()> {
         "Config differs before being changed"
     );
 
-    for i in 0..10 {
-        in_memory_config
-            .machines
-            .get_mut("machine1")
-            .unwrap()
-            .ssh_port = i;
+    for i in 0i32..10i32 {
+        in_memory_config.machines.get_mut("machine1").unwrap().ip = format!("127.0.0.1:{i}");
 
         let config_file =
             File::create(&config_filename).context("Could not re open config file")?;
