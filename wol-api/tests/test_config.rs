@@ -10,15 +10,8 @@ use tempfile::TempDir;
 use tokio::time::timeout;
 use wol_relay_server::config::{self, Config, MachineCfg};
 
-#[tokio::test]
-async fn config_reload() -> Result<()> {
-    const AUTO_RELOAD: bool = true;
-
-    let dir = TempDir::new()?;
-
-    let config_filename = dir.path().join("wol-config.yml");
-
-    let mut in_memory_config = Config {
+fn test_config() -> Config {
+    Config {
         machines: HashMap::from([(
             "machine1".into(),
             MachineCfg {
@@ -28,7 +21,21 @@ async fn config_reload() -> Result<()> {
                 tasks: vec![],
             },
         )]),
-    };
+        ssh: config::Ssh {
+            private_key_file: "~/.ssh/id_ed25519".into(),
+        },
+    }
+}
+
+#[tokio::test]
+async fn config_reload() -> Result<()> {
+    const AUTO_RELOAD: bool = true;
+
+    let dir = TempDir::new()?;
+
+    let config_filename = dir.path().join("wol-config.yml");
+
+    let mut in_memory_config = test_config();
 
     let config_file = File::create_new(&config_filename).context("Could not create config file")?;
 
@@ -72,17 +79,7 @@ async fn config_reload_multiple_times() -> Result<()> {
 
     let config_filename = dir.path().join("wol-config.yml");
 
-    let mut in_memory_config = Config {
-        machines: HashMap::from([(
-            "machine1".into(),
-            MachineCfg {
-                ip: "192.168.1.167".into(),
-                mac: "f4:93:9f:eb:56:a8".into(),
-                ssh_port: 22,
-                tasks: vec![],
-            },
-        )]),
-    };
+    let mut in_memory_config = test_config();
 
     let config_file = File::create_new(&config_filename).context("Could not create config file")?;
 
@@ -133,17 +130,7 @@ async fn config_reload_error() -> Result<()> {
 
     let config_filename = dir.path().join("wol-config.yml");
 
-    let in_memory_config = Config {
-        machines: HashMap::from([(
-            "machine1".into(),
-            MachineCfg {
-                ip: "192.168.1.167".into(),
-                mac: "f4:93:9f:eb:56:a8".into(),
-                ssh_port: 22,
-                tasks: vec![],
-            },
-        )]),
-    };
+    let in_memory_config = test_config();
 
     let config_file = File::create_new(&config_filename).context("Could not create config file")?;
 
@@ -193,17 +180,7 @@ async fn config_not_reloading_if_sibbling_changed() -> Result<()> {
 
     let config_filename = dir.path().join("wol-config.yml");
 
-    let mut in_memory_config = Config {
-        machines: HashMap::from([(
-            "machine1".into(),
-            MachineCfg {
-                ip: "192.168.1.167".into(),
-                mac: "f4:93:9f:eb:56:a8".into(),
-                ssh_port: 22,
-                tasks: vec![],
-            },
-        )]),
-    };
+    let mut in_memory_config = test_config();
 
     let config_file = File::create_new(&config_filename).context("Could not create config file")?;
 
@@ -242,17 +219,7 @@ async fn config_reload_edit_like_editor() -> Result<()> {
 
     let config_filename = dir.path().join("wol-config.yml");
 
-    let mut in_memory_config = Config {
-        machines: HashMap::from([(
-            "machine1".into(),
-            MachineCfg {
-                ip: "192.168.1.167".into(),
-                mac: "f4:93:9f:eb:56:a8".into(),
-                ssh_port: 22,
-                tasks: vec![],
-            },
-        )]),
-    };
+    let mut in_memory_config = test_config();
 
     let config_file = File::create_new(&config_filename).context("Could not create config file")?;
 
