@@ -16,7 +16,7 @@ jobs:
       - name: Go to the frontend dir
         run: cd ./wol-panel
       - name: Install dependencies
-        run: npm ci
+        run: yarn install
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
       - name: Run Playwright tests
