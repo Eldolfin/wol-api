@@ -12,7 +12,8 @@ test.describe("Wol landing page", () => {
   test("Terminal is working", async ({ page }) => {
     await page.getByRole("button", { name: "Connect via ssh" }).click();
     await page.locator(".xterm-rows > div").first().click();
-    await page.getByLabel("Terminal input").fill("  ");
+    await page.getByLabel("Terminal input").fill("echo 'hello' 'world'");
+    await page.getByLabel("Terminal input").press("Enter");
     await expect(page.locator('[id="__nuxt"]')).toContainText("hello world");
   });
 });
