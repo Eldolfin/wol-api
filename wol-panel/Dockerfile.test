@@ -9,4 +9,4 @@ RUN yarn install
 ENV DOCKER_TEST=1
 ENV PLAYWRIGHT_HTML_HOST=0.0.0.0
 
-CMD ["sh", "-c", "find src/ tests/ | entr -ncr npx playwright test"]
+CMD ["sh", "-c", "find src/ tests/ | entr -ncr yarn run playwright"]

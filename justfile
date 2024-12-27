@@ -10,7 +10,13 @@ run: run-docker
 
 run-docker:
     docker context use default
-    alacritty -o 'font.size=10' -e sh -c "cd ./dev && docker compose down && docker compose up -d --build && docker compose logs -f front-tests" &
+    alacritty -o 'font.size=10' -e sh -c "just run-docker-here" &
+
+run-docker-here: start-docker-here
+    cd ./dev && docker compose logs -f front-tests
+
+start-docker-here:
+    cd ./dev && docker compose down && docker compose up -d --build
 
 deploy:
     git push gitea

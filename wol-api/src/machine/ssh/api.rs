@@ -90,7 +90,7 @@ async fn connect(
         .await
         .by_name(machine_name)
         .expect("TODO: send back error");
-    let addrs = (machine.ip, machine.config.ssh_port);
+    let addrs = machine.config.ip;
     let mut session = client::connect(config, addrs, sh)
         .await
         .expect("TODO: handle fail to connect to ssh");

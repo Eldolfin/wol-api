@@ -23,15 +23,8 @@ pub struct MachineCfg {
     pub ip: String,
     #[schema(example = "f4:93:9f:eb:56:a8")]
     pub mac: String,
-    #[schema(example = 22)]
-    #[serde(default = "default_ssh_port")]
-    pub ssh_port: u16,
     #[serde(default)]
     pub tasks: Vec<TaskCfg>,
-}
-
-fn default_ssh_port() -> u16 {
-    22
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
