@@ -24,6 +24,15 @@ services:
     ports:
       - 3000:3000
     restart: unless-stopped
+  back:
+    image: gitea.eldolfin.top/eldolfin/wol-api:latest
+    build: ../wol-api
+    restart: unless-stopped
+    environment:
+      - RUST_LOG=debug
+    volumes:
+      - "/home/oscar/Prog/wol/dev/wol-config.yml:/app/config.yml"
+      - "/home/oscar/.ssh/id_ed25519:/root/.ssh/id_ed25519"
   front-tests:
     build:
       context: ../wol-panel
@@ -34,5 +43,3 @@ services:
     ports:
       - 9323:9323
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"

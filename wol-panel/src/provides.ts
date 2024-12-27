@@ -9,7 +9,21 @@ export const api_client = Symbol() as InjectionKey<ApiClient>;
 export const terminal_pane_provide = Symbol() as InjectionKey<TerminalState>;
 
 const VITE_WOL_API_URL = import.meta.env.VITE_WOL_API_URL;
-const api_path =
-  VITE_WOL_API_URL === "/" ? window.location.href : VITE_WOL_API_URL;
+const api_path = (() => {
+  let api_path: string;
+  if (VITE_WOL_API_URL === "/") {
+    api_path = window.location.href;
+  } else {
+    api_path = VITE_WOL_API_URL;
+  }
+  // in case we're running in docker, hit the docker api
+  if (
+    api_path.includes("localhost") &&
+    window.location.href.includes("front")
+  ) {
+    api_path = api_path.replace("localhost", "back");
+  }
+  return api_path;
+})();
 export const baseUrl = new URL(api_path);
 export const wsUrl = `ws://${baseUrl.host}`;
