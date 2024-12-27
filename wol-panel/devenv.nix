@@ -4,6 +4,7 @@
     pkgs.yarn
     pkgs.nodePackages_latest.prettier
     pkgs.nodejs_23
+    pkgs.playwright-test
     # pkgs.vue-language-server
     # pkgs.nodePackages_latest."@vue/language-server"
   ];
