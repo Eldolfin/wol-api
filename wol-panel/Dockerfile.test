@@ -1,0 +1,11 @@
+FROM mcr.microsoft.com/playwright:v1.49.1-noble
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y entr
+
+COPY yarn.lock package.json ./
+
+RUN yarn install
+ENV DOCKER_TEST=1
+
+CMD ["sh", "-c", "find src/ tests/ | entr -nc npx playwright test --ui-host 0.0.0.0"]

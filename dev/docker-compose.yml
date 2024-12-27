@@ -24,3 +24,15 @@ services:
     ports:
       - 3000:3000
     restart: unless-stopped
+  front-tests:
+    build:
+      context: ../wol-panel
+      dockerfile: ../wol-panel/Dockerfile.test
+    user: "${UID}:${GID}"
+    volumes:
+      - ../wol-panel:/app
+    ports:
+      - 9323:9323
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
