@@ -7,7 +7,9 @@ import WolPanel from "./src/WolPanel.vue";
   <div>
     <NuxtRouteAnnouncer />
     <n-config-provider :theme="darkTheme">
-      <WolPanel style="height: 100vh; width: 100vw" />
+      <n-notification-provider>
+        <WolPanel style="height: 100vh; width: 100vw" />
+      </n-notification-provider>
     </n-config-provider>
   </div>
 </template>
