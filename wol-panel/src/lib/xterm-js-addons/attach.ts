@@ -108,7 +108,7 @@ export class AttachAddon implements ITerminalAddon {
 function addSocketListener<K extends keyof WebSocketEventMap>(
   socket: WebSocket,
   type: K,
-  handler: (this: WebSocket, ev: WebSocketEventMap[K]) => any,
+  handler: (this: WebSocket, ev: WebSocketEventMap[K]) => void,
 ): IDisposable {
   socket.addEventListener(type, handler);
   return {
