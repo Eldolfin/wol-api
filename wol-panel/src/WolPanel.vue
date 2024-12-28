@@ -6,7 +6,7 @@ import { api_client, baseUrl, terminal_pane_provide } from "./provides";
 import type { TerminalSession } from "./lib/utils/terminal_state";
 
 const connectedMachines = ref<TerminalSession[]>([]);
-const focusedTerminal = ref<number | null>(null);
+const focusedTerminal = ref<number>(0);
 const splitSize = ref(1);
 let sessionIdIncr = 0;
 
@@ -24,7 +24,7 @@ function handleCloseTerminal(sessionId: number) {
   const index = connectedMachines.value.findIndex(
     (session) => session.sessionId == sessionId,
   );
-  if (connectedMachines.value.length == 1) focusedTerminal.value = null;
+  if (connectedMachines.value.length == 1) focusedTerminal.value = 0;
   else if (index == 0)
     focusedTerminal.value = connectedMachines.value[1].sessionId;
   else focusedTerminal.value = connectedMachines.value[index - 1].sessionId;
@@ -64,7 +64,7 @@ watch(
       <template v-if="connectedMachines.length > 0" #2>
         <n-card :style="{ height: '100%' }">
           <n-tabs
-            v-model:value="focusedTerminal!"
+            v-model:value="focusedTerminal"
             type="card"
             closable
             :style="{ height: '100%' }"
