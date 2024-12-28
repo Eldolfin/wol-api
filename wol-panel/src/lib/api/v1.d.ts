@@ -116,11 +116,6 @@ export interface components {
       ip: string;
       /** @example f4:93:9f:eb:56:a8 */
       mac: string;
-      /**
-       * Format: int32
-       * @example 22
-       */
-      "ssh-port"?: number;
       tasks?: components["schemas"]["TaskCfg"][];
     };
     /** @description Json message sent by the client's terminal */
@@ -140,7 +135,7 @@ export interface components {
       message: components["schemas"]["SshServerMessageType"];
     };
     SshServerMessageType: {
-      terminal_data: string;
+      error: string;
     };
     /**
      * @example on

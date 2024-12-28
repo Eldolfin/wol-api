@@ -15,6 +15,7 @@ const terminalParentElt = useTemplateRef<HTMLDivElement>("terminal-parent");
 const terminalElt = useTemplateRef<HTMLDivElement>("terminal");
 const term = new Terminal();
 
+const notification = useNotification();
 const { width, height } = useElementSize(terminalParentElt);
 
 const fitAddon = new FitAddon();
@@ -26,6 +27,15 @@ const ws = new WebSocket(
 const attachAddon = new AttachAddon(ws, {
   messageWrapper: (message) => {
     return encodeMessage({ input: message });
+  },
+  dataExtractor: (data) => {
+    const message: components["schemas"]["SshServerMessage"] = JSON.parse(data);
+    notification.error({
+      title: "Could not open a terminal",
+      content: message.message.error,
+      duration: 5000,
+    });
+    return null;
   },
 });
 term.loadAddon(attachAddon);
