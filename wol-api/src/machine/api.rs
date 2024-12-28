@@ -138,7 +138,6 @@ pub async fn task(
 )]
 #[expect(clippy::significant_drop_tightening, reason = "todo fix mais flemme")]
 pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn Reply>, Infallible> {
-    // TODO: change machine state
     let mut lock = store.lock().await;
     let Some(machine) = lock.by_name_mut(&name) else {
         return Ok(Box::new(reply::with_status(

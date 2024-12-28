@@ -29,7 +29,7 @@ pub struct Api;
 #[derive(Clone, Debug, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum SshServerMessageType {
-    TerminalData(String),
+    Error(String),
 }
 
 #[derive(Clone, Debug, Serialize, ToSchema)]
@@ -66,43 +66,87 @@ pub struct SshClientMessage {
         ("name" = String, Path, description = "Name of the machine to wake")
     ),
 )]
-
 // TODO: refactor the logic in a service
+#[expect(clippy::too_many_lines, reason = "TODO: refactor this")]
 async fn connect(
     ssh_private_key_path: PathBuf,
     machine_name: &str,
     store: Store,
     websocket: WebSocket,
 ) {
-    // TODO: unhardcode size, it should be transfered by the client in the ws
+    // these are initial size which are immediatly changed
     const W: u32 = 80;
     const H: u32 = 60;
 
-    // TODO: move as much initialisation as possible in a constructor?
-    // TODO: keep in mind that the config is hot reloading
     const USER: &str = "oscar";
+    let websocket_error = |error: String| {
+        Message::text(
+            serde_json::to_string(&SshServerMessage {
+                message: SshServerMessageType::Error(error),
+            })
+            .unwrap(),
+        )
+    };
+
     let (mut tx, mut rx) = websocket.split();
-    let key_pair = load_secret_key(ssh_private_key_path, None).unwrap();
+
+    let key_pair = match load_secret_key(ssh_private_key_path, None) {
+        Ok(key_pair) => key_pair,
+        Err(err) => {
+            tx.send(websocket_error(format!(
+                "SSH error while loading keys: {err}"
+            )))
+            .await
+            .unwrap();
+            return;
+        }
+    };
     let config = Arc::new(client::Config::default());
     let sh = Client {};
-    let machine = store
-        .lock()
+    let Some(machine) = store.lock().await.by_name(machine_name) else {
+        tx.send(websocket_error(format!(
+            "Machine {machine_name} does not exist"
+        )))
         .await
-        .by_name(machine_name)
-        .expect("TODO: send back error");
+        .unwrap();
+        return;
+    };
+
     let addrs = machine.config.ip;
-    let mut session = client::connect(config, addrs, sh)
-        .await
-        .expect("TODO: handle fail to connect to ssh");
-    let auth_res = session
+    let mut session = match client::connect(config, addrs, sh).await {
+        Ok(session) => session,
+        Err(err) => {
+            tx.send(websocket_error(format!("SSH connection failed: {err}")))
+                .await
+                .unwrap();
+            return;
+        }
+    };
+
+    let auth_res = match session
         .authenticate_publickey(
             USER,
             PrivateKeyWithHashAlg::new(Arc::new(key_pair), None).unwrap(),
         )
         .await
-        .unwrap();
+    {
+        Ok(res) => res,
+        Err(err) => {
+            tx.send(websocket_error(format!("SSH authentication failed: {err}")))
+                .await
+                .unwrap();
+            return;
+        }
+    };
 
-    assert!(auth_res, "Authentication (with publickey) failed");
+    if !auth_res {
+        tx.send(websocket_error(
+            "SSH authentication (with publickey) failed".to_owned(),
+        ))
+        .await
+        .unwrap();
+        return;
+    }
 
     let mut channel = session.channel_open_session().await.unwrap();
 
