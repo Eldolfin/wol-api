@@ -83,7 +83,6 @@ impl Machine {
                     .await
                     .map(|res| res.status.success())
                     .is_ok();
-            // TODO: test this
             self.state = Self::next_state(res, ping_res, self.state);
         }
 
