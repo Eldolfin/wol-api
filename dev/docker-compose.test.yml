@@ -26,3 +26,28 @@ services:
     ports:
       - 3000:3000
     restart: unless-stopped
+  back:
+    image: gitea.eldolfin.top/eldolfin/wol-api:latest
+    build: ../wol-api
+    restart: unless-stopped
+    environment:
+      - RUST_LOG=debug
+    volumes:
+      - "./wol-config.docker.yml:/app/config.yml"
+      - "./ssh:/home/oscar/.ssh/"
+    ports:
+      - 3030:3030
+  front-tests:
+    build:
+      context: ../wol-panel
+      dockerfile: ../wol-panel/Dockerfile.test
+    user: "${UID}:${GID}"
+    volumes:
+      - ../wol-panel:/app
+    ports:
+      - 9323:9323
+    restart: unless-stopped
+    depends_on:
+      - front
+      - back
+      - test-machine
