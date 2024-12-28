@@ -106,6 +106,11 @@ const avatar_color = computed(() => {
   }
 });
 
+const parsed_ip = computed(() => {
+  const [ssh_host, ssh_port] = machine.value.config.ip.split(":");
+  return { ssh_host, ssh_port: ssh_port || "22" };
+});
+
 function handleOpenTerminal() {
   terminalOpened.value = true;
   terminalState.connectToMachine(machine.value.name);
@@ -129,9 +134,9 @@ function handleOpenTerminal() {
         {{ `mac: ${machine.config.mac}` }}
         <br />
         <n-space vertical>
-          <CopiableButton :value="machine.config.ip" />
+          <CopiableButton :value="parsed_ip.ssh_host" />
           <CopiableButton
-            :value="`ssh -p ${machine.config['ssh-port']} oscar@${machine.config.ip}`"
+            :value="`ssh -p ${parsed_ip.ssh_port} oscar@${parsed_ip.ssh_host}`"
           />
         </n-space>
       </template>
