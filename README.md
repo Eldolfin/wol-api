@@ -4,22 +4,20 @@
 
 - [x]: Rust part, web server, wol and cli/config
 - [x]: integration in dashboard or something
-- [x]: frontend
-- [x]: shutdown
 - [x]: on off stage with ping
-- [x]: docker ~compose~ stack deployment
+- [x]: docker ~~compose~~ stack deployment
 - [x]: deploy on rpi
 - [x]: auto deploy on push
-- [ ]: xterm ssh access option
+- [x]: xterm ssh access option
+- [x]: launch apps/games with icons. (config entry with icon url and command to run)
+- [x]: config for running arbitrary command 'actions' on host/machine
 - [ ]: connect vdi button
-- [x]: launch apps/games with icons. (config entry with icon url and command to
-  run)
-- [ ]: config for running arbitrary command 'actions' on host/machine
 - [ ]: machine agent reporting state + monitoring stats (cpu, memory, uptime/last online)
   - [ ]: can also be used as an alternative to ping/ssh
 - [ ]: nix service agent
 - [ ]: nixos package and nix ci
 - [ ]: nixos module with a systemd service
+
 
 
 ## Resources
