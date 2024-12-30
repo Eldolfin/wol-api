@@ -4,22 +4,21 @@ import { wsUrl } from "../provides";
 import type { components } from "../lib/api/v1";
 
 type State = components["schemas"]["StoreInner"];
-const machines_state = ref<State | undefined>(undefined);
 
-// TODO: replace with useWebSocket
-const ws = new WebSocket(wsUrl + "/api/machine/list_ws");
-ws.onmessage = (msg) => {
-  const state: State = JSON.parse(msg.data);
-  machines_state.value = state;
-};
+const { data } = useWebSocket(wsUrl + "/api/machine/list_ws", {
+  autoReconnect: true,
+});
 
-const machines = computed(() => machines_state.value?.machines);
+const machines = computed(() => {
+  const machines_data: State = JSON.parse(data.value);
+  return machines_data?.machines;
+});
 </script>
 
 <template>
   <n-list>
     <template #header> Machines </template>
-    <template v-if="machines_state !== undefined">
+    <template v-if="machines !== undefined">
       <n-list-item v-for="i in machines!.length" :key="i">
         <MachineCard v-model:machine="machines![i - 1]" />
       </n-list-item>
