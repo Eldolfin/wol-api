@@ -98,7 +98,7 @@ pub async fn shutdown(store: Store, name: String, dry_run: bool) -> Result<impl 
     post,
     path = "/{name}/task",
     responses(
-        (status = 200, description = "Task added to the queue successfully"),
+        (status = 200, description = "Task added to the queue successfully", example = "Pushed task 'example task name' successfully"),
     ),
     request_body = Task,
     params(

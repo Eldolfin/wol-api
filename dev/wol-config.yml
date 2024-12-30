@@ -1,7 +1,7 @@
 ssh:
   private_key_file: "/home/oscar/.ssh/id_ed25519"
 machines:
-  testing-docker-container:
+  test:
     mac: "02:42:ac:12:00:02"
     ip: "127.0.0.1:2222"
     tasks:

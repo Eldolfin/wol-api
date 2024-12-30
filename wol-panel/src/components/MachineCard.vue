@@ -15,6 +15,7 @@ const machine = defineModel<components["schemas"]["Machine"]>("machine", {
 
 const terminalState = inject(terminal_pane_provide)!;
 const theme = useThemeVars();
+const notification = useNotification();
 const loading = ref(false);
 const terminalOpened = ref(false);
 const button_blocked = computed(
@@ -65,15 +66,29 @@ function handleSwitchMachineState(newState: boolean) {
   }
 }
 
-function handleQueueTask(taskId: number) {
-  api.POST("/api/machine/{name}/task", {
+async function handleQueueTask(taskId: number) {
+  const res = await api.POST("/api/machine/{name}/task", {
     params: {
       path: {
         name: machine.value.name,
       },
     },
     body: { id: taskId },
+    parseAs: "text",
   });
+  if (res?.response?.status === 200) {
+    notification.success({
+      title: "Action successfully queued!",
+      duration: 5000,
+    });
+  } else {
+    notification.error({
+      title: "Error sending action",
+      content: res?.error,
+      description: res?.response.statusText,
+      duration: 5000,
+    });
+  }
 }
 
 function capitalize(s: string): string {
@@ -152,7 +167,7 @@ function handleOpenTerminal() {
             <n-button
               v-for="(task, i) in machine.config.tasks"
               :key="i"
-              @click="handleQueueTask(i)"
+              @click="() => handleQueueTask(i)"
             >
               <n-image width="30" :src="task.icon_url" preview-disabled>
                 <template #error>
