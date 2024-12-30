@@ -51,16 +51,20 @@ pub async fn list(store: Store) -> Result<Box<dyn Reply>, Infallible> {
 )]
 pub async fn list_ws(store: Store, websocket: WebSocket) {
     let (mut tx, _rx) = websocket.split();
+    let mut last_machines_states = None;
     loop {
         let machines = store.lock().await.to_owned();
-        let res = tx
-            .send(Message::text(serde_json::to_string(&machines).unwrap()))
-            .await;
-        match res {
-            Ok(_) => (),
-            Err(e) => {
-                debug!("/list_ws was closed by the client: {e:#}");
-                break;
+        if Some(machines.clone()) != last_machines_states {
+            last_machines_states = Some(machines.clone());
+            let res = tx
+                .send(Message::text(serde_json::to_string(&machines).unwrap()))
+                .await;
+            match res {
+                Ok(_) => (),
+                Err(e) => {
+                    debug!("/list_ws was closed by the client: {e:#}");
+                    break;
+                }
             }
         }
         time::sleep(SEND_STATE_INTERVAL).await;

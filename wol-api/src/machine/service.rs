@@ -13,7 +13,7 @@ use utoipa::ToSchema;
 
 pub type Store = sync::Arc<Mutex<StoreInner>>;
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 pub struct StoreInner {
     machines: Vec<Machine>,
 }
@@ -49,7 +49,7 @@ impl StoreInner {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub struct Machine {
     #[schema(example = "computer1")]
@@ -227,7 +227,7 @@ pub enum State {
     PendingOff,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub struct Task {
     id: usize,
