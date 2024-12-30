@@ -3,10 +3,13 @@ const value = defineModel<string>("value", {
   required: true,
 });
 
-const { copy, copied } = useClipboard({ source: value });
+const { copy } = useClipboard({ source: value });
+const copied = ref(false);
 
 function handleClick() {
   copy();
+  copied.value = true;
+  setTimeout(() => (copied.value = false), 2000);
 }
 </script>
 <template>
