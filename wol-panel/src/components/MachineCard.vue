@@ -7,7 +7,7 @@ import {
   ImageOutline as ImageOutlineIcon,
   LogInOutline,
 } from "@vicons/ionicons5";
-import { api_client, terminal_pane_provide } from "../provides";
+import { api_client, terminal_pane_provide, baseUrl } from "../provides";
 
 const machine = defineModel<components["schemas"]["Machine"]>("machine", {
   required: true,
@@ -169,7 +169,11 @@ function handleOpenTerminal() {
               :key="i"
               @click="() => handleQueueTask(i)"
             >
-              <n-image width="30" :src="task.icon_url" preview-disabled>
+              <n-image
+                width="30"
+                :src="baseUrl.origin + task.icon_url"
+                preview-disabled
+              >
                 <template #error>
                   <n-icon :size="30" color="lightGrey">
                     <ImageOutlineIcon />

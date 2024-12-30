@@ -1,3 +1,4 @@
+use directories::ProjectDirs;
 use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     path::PathBuf,
@@ -9,6 +10,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_scalar::Scalar;
 use warp::{reply, Filter as _};
 use wol_relay_server::{
+    cache::{self, cache_images},
     config::{self},
     consts::{API_PATH, CONFIG_AUTO_RELOAD},
     machine::{self, service::StoreInner},
@@ -33,7 +35,8 @@ struct Args {
 #[derive(OpenApi)]
 #[openapi(
     nest(
-        (path = "/machine", api = machine::api::Api)
+        (path = "/machine", api = machine::api::Api),
+        (path = "/cache", api = cache::ImageApi)
     ),
     tags(
         (name = "wol", description = "Power on and off computers API")
@@ -56,10 +59,16 @@ struct ApiDoc;
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
 
+    let dirs =
+        ProjectDirs::from("top", "eldolfin", "wol-api").expect("to be able to have project dirs");
+
     let args = Args::parse();
     debug!("{args:?}");
 
     let (config, mut config_changed) = config::open(&args.config_path, CONFIG_AUTO_RELOAD)?;
+
+    let config_val = config.lock().unwrap().clone();
+    *config.lock().unwrap() = cache::cache_images(&dirs, config_val).await?;
 
     let api_doc = warp::path!("api-doc.json").map(|| reply::json(&ApiDoc::openapi()));
     let rapidoc_handler =
@@ -71,6 +80,8 @@ async fn main() -> anyhow::Result<()> {
             .to_html();
         reply::html(html)
     });
+
+    let image_cache = cache::image_api(&dirs)?;
 
     // let cors = warp::cors().allow_origin("http://localhost:3000").allow_methods(vec!["GET", "POST"]);
     // let cors = warp::cors().allow_any_origin().allow_methods(["GET", "POST", "OPTIONS"]);
@@ -100,12 +111,17 @@ async fn main() -> anyhow::Result<()> {
             .or(scalar_handler)
             .or(rapidoc_handler)
             .or(machine_api)
+            .or(image_cache.clone())
             .with(&cors);
         let routes = warp::path(API_PATH.strip_prefix("/").unwrap()).and(routes);
         tokio::select! {
             biased;
 
             v = config_changed.recv() => {
+                match cache_images(&dirs, config.lock().unwrap().clone()).await {
+                    Ok(cached_config) => *config.lock().unwrap() = cached_config,
+                    Err(e) => log::error!("{}", e.context("Failed to cache images")),
+                };
                 let new_store = StoreInner::new(&config.lock().unwrap())?;
                 *store.lock().await = new_store;
                 v.unwrap();

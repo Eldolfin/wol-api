@@ -31,6 +31,7 @@
         bacon
         entr
         rustfmt
+        cargo-nextest
 
         # inputs.omnix.packages # TODO:
       ];
