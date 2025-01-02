@@ -8,6 +8,8 @@ import {
   LogInOutline,
 } from "@vicons/ionicons5";
 import { api_client, terminal_pane_provide, baseUrl } from "../provides";
+import WindowPortal from "./WindowPortal.vue";
+import { Sanzu } from "sanzu-vue";
 
 // TODO: change to define props
 const machine = defineModel<components["schemas"]["Machine"]>("machine", {
@@ -18,7 +20,7 @@ const terminalState = inject(terminal_pane_provide)!;
 const theme = useThemeVars();
 const notification = useNotification();
 const loading = ref(false);
-const terminalOpened = ref(false);
+const sanzuOpened = ref(false);
 const button_blocked = computed(
   () =>
     loading.value ||
@@ -128,11 +130,17 @@ const parsed_ip = computed(() => {
 });
 
 function handleOpenTerminal() {
-  terminalOpened.value = true;
   terminalState.connectToMachine(machine.value.name);
+}
+
+function handleOpenVdi() {
+  sanzuOpened.value = true;
 }
 </script>
 <template>
+  <WindowPortal :open="sanzuOpened">
+    <Sanzu />
+  </WindowPortal>
   <n-card hoverable>
     <n-thing>
       <template #avatar>
@@ -192,7 +200,15 @@ function handleOpenTerminal() {
                   <LogInOutline />
                 </n-icon>
               </template>
-              Connect via ssh
+              Open remote terminal
+            </n-button>
+            <n-button :loading="loading" @click="handleOpenVdi">
+              <template #icon>
+                <n-icon>
+                  <LogInOutline />
+                </n-icon>
+              </template>
+              Connect remote desktop
             </n-button>
             <ApplicationList
               :applications="machine.applications"
