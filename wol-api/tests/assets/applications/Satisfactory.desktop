@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Satisfactory
+Comment=Play this game on Steam
+Exec=steam steam://rungameid/526870
+Icon=steam_icon_526870
+Terminal=false
+Type=Application
+Categories=Game;
