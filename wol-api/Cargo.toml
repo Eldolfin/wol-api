@@ -34,6 +34,8 @@ sha2 = "0.10.8"
 regex = "1.11.1"
 reqwest = "0.12.11"
 image = "0.25.5"
+xdgkit = "3.2.5"
+itertools = "0.14.0"
 
 [dev-dependencies]
 serde_yaml = "0.9.34"
@@ -98,3 +100,4 @@ ignored_unit_patterns = "allow"
 wildcard_enum_match_arm = "allow"
 pattern_type_mismatch = "allow"
 iter_over_hash_type = "allow"
+impl_trait_in_params = "allow"

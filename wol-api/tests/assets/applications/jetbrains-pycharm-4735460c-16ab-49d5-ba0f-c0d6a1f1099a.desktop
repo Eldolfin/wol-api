@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=PyCharm Professional 2024.1.4
+Exec="/home/oscar/.local/share/JetBrains/Toolbox/apps/pycharm-professional/bin/pycharm.sh" %u
+Version=1.0
+Type=Application
+Categories=Development;IDE;
+Terminal=false
+Icon=/home/oscar/.local/share/JetBrains/Toolbox/apps/pycharm-professional/bin/pycharm.svg
+Comment=The full-stack Python IDE
+StartupWMClass=jetbrains-pycharm
+StartupNotify=true
