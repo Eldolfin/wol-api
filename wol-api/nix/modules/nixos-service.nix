@@ -35,6 +35,7 @@
             StateDirectoryMode = "0700";
             CacheDirectory = "eldolfin.wol-agent";
             CacheDirectoryMode = "0750";
+            Environment = "RUST_LOG=debug";
           };
         };
       };

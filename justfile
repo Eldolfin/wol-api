@@ -6,14 +6,11 @@ export GID := `id -g`
 
 run: run-docker
     alacritty -o 'font.size=10' -e sh -c "cd ./wol-api && nix develop -c just watch --bin backend -- -c ../dev/wol-config.yml" &
-    alacritty -o 'font.size=10' -e sh -c "curl --retry-connrefused --connect-timeout 30 --retry 300 --retry-delay 1 'http://localhost:3030/api/machine/list' && firefox http://localhost:3000 http://localhost:3030/api/doc" &
+    alacritty -o 'font.size=10' -e sh -c "curl --retry-connrefused --connect-timeout 30 --retry 300 --retry-delay 1 'http://localhost:3030/api/machine/list' && firefox --new-tab --url http://localhost:3000 http://localhost:3030/api/doc" &
 
 run-docker:
     docker context use default
-    alacritty -o 'font.size=10' -e sh -c "just run-docker-here" &
-
-run-docker-here: start-docker-here
-    cd ./dev && docker compose logs -f front-tests
+    alacritty -o 'font.size=10' -e sh -c "just start-docker-here" &
 
 start-docker-here:
     cd ./dev && docker compose down && docker compose up -d --build

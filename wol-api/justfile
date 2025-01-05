@@ -1,5 +1,6 @@
-export RUST_LOG := "wol_relay_server=debug"
-# export RUST_LOG := "debug"
+# export RUST_LOG := "wol_relay_server=debug"
+export RUST_LOG := "debug"
+export RUST_LOG_STYLE := "always"
 
 default:
     @just --list

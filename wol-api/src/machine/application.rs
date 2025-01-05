@@ -1,14 +1,31 @@
+use serde::{Deserialize, Serialize};
 use std::{
+    ffi::OsStr,
     fs::{self, File},
     io::Read as _,
     iter,
     path::{Path, PathBuf},
     str::FromStr as _,
 };
+use thiserror::Error;
+use utoipa::ToSchema;
 use xdgkit::{basedir, categories::Categories, desktop_entry::DesktopEntry, icon_finder};
 
+#[derive(Debug)]
 pub struct Application {
     entry: DesktopEntry,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, ToSchema)]
+#[expect(clippy::module_name_repetitions, reason = "more clear")]
+pub struct ApplicationInfo {
+    #[schema(example = "Satisfactory")]
+    name: String,
+    // icon: TODO:
+    #[schema(example = "steam steam://rungameid/526870")]
+    exec: String,
+    #[schema(example = "json!([\"Game\"])")]
+    categories: Vec<String>,
 }
 
 impl Application {
@@ -47,7 +64,54 @@ pub fn list_local_applications() -> anyhow::Result<Vec<Application>> {
         .flat_map(fs::read_dir)
         .flat_map(iter::IntoIterator::into_iter)
         .filter_map(|res| res.ok().map(|entry| entry.path()))
-        .filter(|path| path.is_file())
+        .filter(|path| path.is_file() && path.extension() == Some(OsStr::new("desktop")))
         .map(Application::parse)
         .collect()
+}
+
+#[expect(clippy::module_name_repetitions, reason = "more clear")]
+#[derive(Debug, Error)]
+pub enum ApplicationInfoErrorKind {
+    #[error("Missing a name")]
+    NoName,
+    #[error("Missing the exec field")]
+    NoExec,
+}
+
+#[expect(clippy::module_name_repetitions, reason = "more clear")]
+#[derive(Debug, Error)]
+#[error("Application {application:#?}: {kind:#}")]
+pub struct ApplicationInfoError {
+    application: Application,
+    kind: ApplicationInfoErrorKind,
+}
+
+impl TryInto<ApplicationInfo> for Application {
+    type Error = ApplicationInfoError;
+
+    fn try_into(self) -> Result<ApplicationInfo, Self::Error> {
+        let Some(name) = self.name() else {
+            return Err(ApplicationInfoError {
+                application: self,
+                kind: ApplicationInfoErrorKind::NoName,
+            });
+        };
+        let Some(exec) = self.exec() else {
+            return Err(ApplicationInfoError {
+                application: self,
+                kind: ApplicationInfoErrorKind::NoExec,
+            });
+        };
+        let categories = self
+            .categories()
+            .into_iter()
+            .map(|category| category.to_string())
+            .collect();
+
+        Ok(ApplicationInfo {
+            name: name.to_owned(),
+            exec: exec.to_owned(),
+            categories,
+        })
+    }
 }
