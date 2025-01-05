@@ -24,7 +24,7 @@ pub struct ApplicationInfo {
     // icon: TODO:
     #[schema(example = "steam steam://rungameid/526870")]
     exec: String,
-    #[schema(example = "json!([\"Game\"])")]
+    #[schema(example = json!(["Game"]))]
     categories: Vec<String>,
 }
 
@@ -105,7 +105,12 @@ impl TryInto<ApplicationInfo> for Application {
         let categories = self
             .categories()
             .into_iter()
-            .map(|category| category.to_string())
+            .map(|category| {
+                let category = category.to_string();
+                let category = category.strip_prefix('"').unwrap_or(&category);
+                let category = category.strip_suffix('"').unwrap_or(category);
+                category.to_owned()
+            })
             .collect();
 
         Ok(ApplicationInfo {

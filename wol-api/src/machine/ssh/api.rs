@@ -42,7 +42,7 @@ pub struct SshServerMessage {
 #[serde(rename_all = "snake_case")]
 pub enum SshClientMessageType {
     /// The client changed the size of the terminal
-    #[schema(example = "json!((80, 32))")]
+    #[schema(example = json!((80, 32)))]
     ChangeSize((u32, u32)),
     /// The client typed something in the terminal
     #[schema(example = "echo hello")]

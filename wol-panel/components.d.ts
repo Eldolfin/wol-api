@@ -28,6 +28,8 @@ declare module 'vue' {
     NTabs: typeof import('naive-ui')['NTabs']
     NText: typeof import('naive-ui')['NText']
     NThing: typeof import('naive-ui')['NThing']
+    NTree: typeof import('naive-ui')['NTree']
+    NTreeSelect: typeof import('naive-ui')['NTreeSelect']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Terminal: typeof import('./src/components/Terminal.vue')['default']
