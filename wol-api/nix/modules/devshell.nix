@@ -1,7 +1,6 @@
 {inputs, ...}: {
   perSystem = {
     config,
-    self',
     pkgs,
     ...
   }: let
@@ -22,8 +21,8 @@
     devShells.default = pkgs.mkShell {
       name = "wol-relay-server-shell";
       inputsFrom = [
-        self'.devShells.rust
         config.treefmt.build.devShell
+        config.packages.backend
       ];
       packages = with pkgs; [
         just

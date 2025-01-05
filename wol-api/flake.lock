@@ -16,15 +16,12 @@
       }
     },
     "crane": {
-      "inputs": {
-        "nixpkgs": ["omnix", "rust-flake", "nixpkgs"]
-      },
       "locked": {
-        "lastModified": 1718474113,
-        "narHash": "sha256-UKrfy/46YF2TRnxTtKCYzqf2f5ZPRRWwKCCJb7O5X8U=",
+        "lastModified": 1736032295,
+        "narHash": "sha256-QNRlMxQTT3rdgsQb3QxljO14kE8xxdDXNJ/4jIm4u3Q=",
         "owner": "ipetkov",
         "repo": "crane",
-        "rev": "0095fd8ea00ae0a9e6014f39c375e40c2fbd3386",
+        "rev": "9fa361afe873c740d5ca10ff526463d5807eab88",
         "type": "github"
       },
       "original": {
@@ -35,7 +32,7 @@
     },
     "crane_2": {
       "inputs": {
-        "nixpkgs": ["rust-flake", "nixpkgs"]
+        "nixpkgs": ["omnix", "rust-flake", "nixpkgs"]
       },
       "locked": {
         "lastModified": 1718474113,
@@ -362,11 +359,11 @@
     },
     "root": {
       "inputs": {
+        "crane": "crane",
         "flake-parts": "flake-parts",
         "nixpkgs": "nixpkgs",
         "omnix": "omnix",
         "pre-commit-hooks": "pre-commit-hooks",
-        "rust-flake": "rust-flake_2",
         "rust-overlay": "rust-overlay_2",
         "systems": "systems_2",
         "treefmt-nix": "treefmt-nix_2"
@@ -374,29 +371,9 @@
     },
     "rust-flake": {
       "inputs": {
-        "crane": "crane",
+        "crane": "crane_2",
         "nixpkgs": ["omnix", "nixpkgs"],
         "rust-overlay": "rust-overlay"
-      },
-      "locked": {
-        "lastModified": 1730771644,
-        "narHash": "sha256-VEF4j97cGWQSp/pSSWE6KtOvBf+4Ow2iNfhZ6DLgmSQ=",
-        "owner": "juspay",
-        "repo": "rust-flake",
-        "rev": "cdc17a1d009674a9a23c7e4749baf474d2419f04",
-        "type": "github"
-      },
-      "original": {
-        "owner": "juspay",
-        "repo": "rust-flake",
-        "type": "github"
-      }
-    },
-    "rust-flake_2": {
-      "inputs": {
-        "crane": "crane_2",
-        "nixpkgs": ["nixpkgs"],
-        "rust-overlay": ["rust-overlay"]
       },
       "locked": {
         "lastModified": 1730771644,
