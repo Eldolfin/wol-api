@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useThemeVars } from "naive-ui";
+import { useThemeVars, type TreeOption } from "naive-ui";
 import type { components } from "../lib/api/v1";
 import { unreachable } from "../lib/utils/rust";
 import {
@@ -130,6 +130,29 @@ function handleOpenTerminal() {
   terminalOpened.value = true;
   terminalState.connectToMachine(machine.value.name);
 }
+
+const applications = computed<TreeOption[]>(() => {
+  const categories = new Map<string, TreeOption>();
+  if (machine.value.applications == null) {
+    return [];
+  }
+  for (const application of machine.value.applications!) {
+    for (const category of application.categories) {
+      if (!categories.has(category)) {
+        categories.set(category, {
+          label: category,
+          key: `category-${category}`,
+          children: [],
+        });
+      }
+      categories.get(category)!.children!.push({
+        label: application.name,
+        key: `${category}-${application.name}`,
+      });
+    }
+  }
+  return new Array(...categories.values());
+});
 </script>
 <template>
   <n-card :style="{ borderRadius: theme.borderRadius }" hoverable>
@@ -190,6 +213,7 @@ function handleOpenTerminal() {
               Connect via ssh
             </n-button>
           </n-space>
+          <n-tree block-line :data="applications" :selectable="false" />
         </n-button-group>
       </template>
     </n-thing>

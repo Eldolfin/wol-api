@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+  "/api/cache/cache/images/{filename}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["images"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/machine/agent": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["agent"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/machine/list": {
     parameters: {
       query?: never;
@@ -104,7 +136,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    ApplicationInfo: {
+      /** @example json!(["Game"]) */
+      categories: string[];
+      /** @example steam steam://rungameid/526870 */
+      exec: string;
+      /** @example Satisfactory */
+      name: string;
+    };
     Machine: {
+      applications?: components["schemas"]["ApplicationInfo"][] | null;
       config: components["schemas"]["MachineCfg"];
       /** @example computer1 */
       name: string;
@@ -165,6 +206,47 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  images: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Filename provided in the config */
+        filename: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Image data */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  agent: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Switching protocol to websocket */
+      101: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StoreInner"];
+        };
+      };
+    };
+  };
   list: {
     parameters: {
       query?: never;
