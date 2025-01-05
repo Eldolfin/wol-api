@@ -20,5 +20,5 @@ RUN mkdir -p /root/.ssh
 RUN apt-get update \
   && apt-get install -y curl ssh \
   && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/wol-relay-server /usr/local/bin
-ENTRYPOINT ["/usr/local/bin/wol-relay-server", "-c", "/app/config.yml"]
+COPY --from=builder /app/target/release/backend /usr/local/bin
+ENTRYPOINT ["/usr/local/bin/backend", "-c", "/app/config.yml"]
