@@ -44,6 +44,7 @@ pub struct Config {
 #[serde(rename_all = "snake_case")]
 pub struct TaskCfg {
     #[schema(example = "[\"echo\", \"hello\", \"world\"]")]
+    #[serde(skip_serializing)]
     pub command: Vec<String>,
     #[schema(
         example = "https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png"
