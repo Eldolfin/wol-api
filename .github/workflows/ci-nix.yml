@@ -6,13 +6,11 @@ on:
   pull_request:
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
-      - name: Install omnix
-        run: nix --accept-flake-config profile install "github:juspay/omnix"
-      - run: om ci
+      - name: Build with nix
+        run: |
+          cd ./wol-api
+          nix build

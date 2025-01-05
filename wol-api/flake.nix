@@ -4,9 +4,7 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     systems.url = "github:nix-systems/default";
-    rust-flake.url = "github:juspay/rust-flake";
-    rust-flake.inputs.nixpkgs.follows = "nixpkgs";
-    rust-flake.inputs.rust-overlay.follows = "rust-overlay";
+    crane.url = "github:ipetkov/crane";
     rust-overlay.url = "github:oxalica/rust-overlay";
 
     # Dev tools

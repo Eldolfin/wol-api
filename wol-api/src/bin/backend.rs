@@ -55,7 +55,7 @@ struct InnerApiDoc;
 )]
 struct ApiDoc;
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 29)]
+#[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
 
@@ -76,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
 
     let scalar_handler = warp::path!("doc").map(move || {
         let html = Scalar::new(ApiDoc::openapi())
-            .custom_html(include_str!("../res/scalar.html"))
+            .custom_html(include_str!("../../res/scalar.html"))
             .to_html();
         reply::html(html)
     });
