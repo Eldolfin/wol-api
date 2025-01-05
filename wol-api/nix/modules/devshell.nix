@@ -22,7 +22,7 @@
       name = "wol-relay-server-shell";
       inputsFrom = [
         config.treefmt.build.devShell
-        config.packages.backend
+        config.packages.default
       ];
       packages = with pkgs; [
         just
@@ -32,6 +32,10 @@
         rustfmt
         cargo-nextest
       ];
+      env = {
+        CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
+        CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+      };
     };
   };
 }

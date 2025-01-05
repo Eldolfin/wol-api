@@ -1,4 +1,4 @@
-use super::wol;
+use super::{application::ApplicationInfo, wol};
 use crate::config;
 use anyhow::Context as _;
 use log::{debug, info};
@@ -59,6 +59,7 @@ pub struct Machine {
     pub config: config::MachineCfg,
     #[serde(skip_serializing)]
     pub addr: SocketAddr,
+    pub applications: Option<Vec<ApplicationInfo>>,
 }
 
 impl Machine {
@@ -198,7 +199,12 @@ impl Machine {
                 .context("Error while resolving '{name}' ip")?,
             state: State::default(),
             tasks: Vec::new(),
+            applications: None,
         })
+    }
+
+    pub fn set_applications(&mut self, applications: Vec<ApplicationInfo>) {
+        self.applications = Some(applications);
     }
 }
 

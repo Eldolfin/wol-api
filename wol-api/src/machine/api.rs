@@ -1,5 +1,6 @@
 use super::service::{State, Store, StoreInner, Task};
 use crate::{
+    agent::messages::AgentHello,
     config::Config,
     consts::{MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
     machine::ssh,
@@ -8,7 +9,7 @@ use crate::{
 use core::convert::Infallible;
 use futures_util::{SinkExt as _, StreamExt as _};
 use http::status::StatusCode;
-use log::debug;
+use log::{debug, error};
 use std::{future::Future, pin::Pin};
 use tokio::time;
 use utoipa::OpenApi;
@@ -23,7 +24,7 @@ use warp::{
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(list, wake, shutdown, task, list_ws),
+    paths(list, wake, shutdown, task, list_ws, agent),
     nest(
         (path = "/ssh", api = ssh::api::Api)
     ),
@@ -68,6 +69,53 @@ pub async fn list_ws(store: Store, websocket: WebSocket) {
             }
         }
         time::sleep(SEND_STATE_INTERVAL).await;
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/agent",
+    responses(
+        (status = 101, description = "Switching protocol to websocket", body = StoreInner)
+    )
+)]
+pub async fn agent(store: Store, websocket: WebSocket) {
+    let (_tx, mut rx) = websocket.split();
+    let agent_hello_msg = match rx.next().await {
+        Some(Ok(msg)) => msg,
+        Some(Err(err)) => {
+            error!("Failed to received agent hello: {:#}", err);
+            return;
+        }
+        _ => {
+            error!("Failed to receive agent hello");
+            return;
+        }
+    };
+    let Ok(msg_str) = agent_hello_msg.to_str() else {
+        error!("Agent sent a message that was not a string");
+        return;
+    };
+    let agent_hello: AgentHello = match serde_json::from_str(msg_str) {
+        Ok(hello) => hello,
+        Err(err) => {
+            error!("Agent sent an incorrect formatted hello message: {:#}", err);
+            return;
+        }
+    };
+
+    let mut lock = store.lock().await;
+    if let Some(machine) = lock.by_name_mut(&agent_hello.machine_name) {
+        machine.set_applications(agent_hello.applications);
+        debug!(
+            "Machine `{}` successfully sent its list of applications",
+            machine.name
+        );
+    } else {
+        error!(
+            "An unknown agent sent a hello message: {}",
+            agent_hello.machine_name
+        );
     }
 }
 
@@ -184,27 +232,27 @@ pub fn handlers(
     };
     let list_ws = {
         let store = store.clone();
-        warp::path!("list_ws")
-            .and(ws())
-            // .map(move || list_ws(store.clone()))
-            .map(move |ws: ws::Ws| {
-                // And then our closure will be called when it completes...
+        warp::path!("list_ws").and(ws()).map(move |ws: ws::Ws| {
+            let store = store.clone();
+            ws.on_upgrade(move |websocket| {
                 let store = store.clone();
-                ws.on_upgrade(move |websocket| {
-                    // async move {
-                    // Just echo all messages back...
-                    // rx.forward(tx).map(|result| {
-                    //     if let Err(e) = result {
-                    //         eprintln!("websocket error: {:?}", e);
-                    //     }
-                    // })
-                    // }
-                    let store = store.clone();
-                    async move {
-                        list_ws(store, websocket).await;
-                    }
-                })
+                async move {
+                    list_ws(store, websocket).await;
+                }
             })
+        })
+    };
+    let agent = {
+        let store = store.clone();
+        warp::path!("agent").and(ws()).map(move |ws: ws::Ws| {
+            let store = store.clone();
+            ws.on_upgrade(move |websocket| {
+                let store = store.clone();
+                async move {
+                    agent(store, websocket).await;
+                }
+            })
+        })
     };
 
     let wake = {
@@ -241,7 +289,8 @@ pub fn handlers(
         .or(shutdown)
         .or(task)
         .or(list_ws)
-        .or(ssh_handlers);
+        .or(ssh_handlers)
+        .or(agent);
 
     Ok((routes, check_state_thread))
 }

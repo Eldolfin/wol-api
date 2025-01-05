@@ -1,4 +1,4 @@
-use itertools::Itertools;
+use itertools::Itertools as _;
 use rstest::rstest;
 use std::path::PathBuf;
 use wol_relay_server::machine::application::{list_local_applications, Application};
