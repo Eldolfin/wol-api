@@ -8,7 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "generate:api-spec": "curl -o ./node_modules/api-doc.json http://localhost:3030/api/api-doc.json && openapi-typescript ./node_modules/api-doc.json -o ./src/lib/api/v1.d.ts",
+    "generate:api-spec": "curl --retry-connrefused --connect-timeout 30 --retry 300 --retry-delay 1 -o ./node_modules/api-doc.json http://localhost:3030/api/api-doc.json && openapi-typescript ./node_modules/api-doc.json -o ./src/lib/api/v1.d.ts",
     "fmt": "prettier --ignore-path src/lib/api/v1.d.ts --ignore-path ./components.d.ts -w .",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",

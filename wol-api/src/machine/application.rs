@@ -1,5 +1,7 @@
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::HashMap,
     ffi::OsStr,
     fs::{self, File},
     io::Read as _,
@@ -16,16 +18,29 @@ pub struct Application {
     entry: DesktopEntry,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 #[expect(clippy::module_name_repetitions, reason = "more clear")]
+/// Serializable application
 pub struct ApplicationInfo {
-    #[schema(example = "Satisfactory")]
     name: String,
     // icon: TODO:
-    #[schema(example = "steam steam://rungameid/526870")]
     exec: String,
-    #[schema(example = json!(["Game"]))]
-    categories: Vec<String>,
+    category: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, ToSchema)]
+#[expect(clippy::module_name_repetitions, reason = "more clear")]
+/// Application data for the web
+pub struct ApplicationDisplay {
+    #[schema(example = "Satisfactory")]
+    name: String,
+    // icon: TODO: (url)
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, ToSchema)]
+#[expect(clippy::module_name_repetitions, reason = "more clear")]
+pub struct GroupedApplication {
+    groups: HashMap<String, Vec<ApplicationDisplay>>,
 }
 
 impl Application {
@@ -102,21 +117,37 @@ impl TryInto<ApplicationInfo> for Application {
                 kind: ApplicationInfoErrorKind::NoExec,
             });
         };
-        let categories = self
-            .categories()
-            .into_iter()
-            .map(|category| {
-                let category = category.to_string();
-                let category = category.strip_prefix('"').unwrap_or(&category);
-                let category = category.strip_suffix('"').unwrap_or(category);
-                category.to_owned()
-            })
-            .collect();
+        let category = self.categories().first().copied().unwrap_or_default();
+        let category = category.to_string();
+        let category = category.strip_prefix('"').unwrap_or(&category);
+        let category = category.strip_suffix('"').unwrap_or(category);
+        let category = if category.is_empty() {
+            "Misc"
+        } else {
+            category
+        };
+        let category = category.to_owned();
 
         Ok(ApplicationInfo {
             name: name.to_owned(),
             exec: exec.to_owned(),
-            categories,
+            category,
         })
+    }
+}
+
+impl From<Vec<ApplicationInfo>> for GroupedApplication {
+    fn from(value: Vec<ApplicationInfo>) -> Self {
+        let groups = value
+            .into_iter()
+            .map(|info| (info.category.clone(), ApplicationDisplay::from(info)))
+            .into_group_map();
+        Self { groups }
+    }
+}
+
+impl From<ApplicationInfo> for ApplicationDisplay {
+    fn from(value: ApplicationInfo) -> Self {
+        Self { name: value.name }
     }
 }
