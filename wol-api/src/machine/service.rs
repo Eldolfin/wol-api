@@ -1,4 +1,7 @@
-use super::{application::ApplicationInfo, wol};
+use super::{
+    application::{ApplicationInfo, GroupedApplication},
+    wol,
+};
 use crate::config;
 use anyhow::Context as _;
 use log::{debug, info};
@@ -59,7 +62,7 @@ pub struct Machine {
     pub config: config::MachineCfg,
     #[serde(skip_serializing)]
     pub addr: SocketAddr,
-    pub applications: Option<Vec<ApplicationInfo>>,
+    pub applications: Option<GroupedApplication>,
 }
 
 impl Machine {
@@ -204,7 +207,7 @@ impl Machine {
     }
 
     pub fn set_applications(&mut self, applications: Vec<ApplicationInfo>) {
-        self.applications = Some(applications);
+        self.applications = Some(applications.into());
     }
 }
 

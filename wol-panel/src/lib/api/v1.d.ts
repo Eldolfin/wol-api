@@ -136,16 +136,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    ApplicationInfo: {
-      /** @example json!(["Game"]) */
-      categories: string[];
-      /** @example steam steam://rungameid/526870 */
-      exec: string;
+    /** @description Application data for the web */
+    ApplicationDisplay: {
       /** @example Satisfactory */
       name: string;
     };
+    GroupedApplication: {
+      groups: {
+        [key: string]: components["schemas"]["ApplicationDisplay"][];
+      };
+    };
     Machine: {
-      applications?: components["schemas"]["ApplicationInfo"][] | null;
+      applications?: null | components["schemas"]["GroupedApplication"];
       config: components["schemas"]["MachineCfg"];
       /** @example computer1 */
       name: string;
@@ -190,8 +192,6 @@ export interface components {
       id: number;
     };
     TaskCfg: {
-      /** @example ["echo", "hello", "world"] */
-      command: string[];
       /** @example https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png */
       icon_url: string;
       /** @example Say hello world */
