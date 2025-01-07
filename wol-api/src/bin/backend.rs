@@ -10,13 +10,14 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_scalar::Scalar;
 use warp::{reply, Filter as _};
 use wol_relay_server::{
-    cache::{self, cache_images},
+    cache::{self, cache_images_from_web},
     config::{self},
     consts::{API_PATH, CONFIG_AUTO_RELOAD},
     machine::{self, service::StoreInner},
 };
 
 use clap::Parser;
+use lazy_static::lazy_static;
 use log::debug;
 
 #[derive(Parser, Debug)]
@@ -59,16 +60,13 @@ struct ApiDoc;
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
 
-    let dirs =
-        ProjectDirs::from("top", "eldolfin", "wol-api").expect("to be able to have project dirs");
-
     let args = Args::parse();
     debug!("{args:?}");
 
     let (config, mut config_changed) = config::open(&args.config_path, CONFIG_AUTO_RELOAD)?;
 
     let config_val = config.lock().unwrap().clone();
-    *config.lock().unwrap() = cache::cache_images(&dirs, config_val).await?;
+    *config.lock().unwrap() = cache::cache_images_from_web(config_val).await?;
 
     let api_doc = warp::path!("api-doc.json").map(|| reply::json(&ApiDoc::openapi()));
     let rapidoc_handler =
@@ -81,7 +79,7 @@ async fn main() -> anyhow::Result<()> {
         reply::html(html)
     });
 
-    let image_cache = cache::image_api(&dirs)?;
+    let image_cache = cache::image_api()?;
 
     // let cors = warp::cors().allow_origin("http://localhost:3000").allow_methods(vec!["GET", "POST"]);
     // let cors = warp::cors().allow_any_origin().allow_methods(["GET", "POST", "OPTIONS"]);
@@ -118,7 +116,7 @@ async fn main() -> anyhow::Result<()> {
             biased;
 
             v = config_changed.recv() => {
-                match cache_images(&dirs, config.lock().unwrap().clone()).await {
+                match cache_images_from_web(config.lock().unwrap().clone()).await {
                     Ok(cached_config) => *config.lock().unwrap() = cached_config,
                     Err(e) => log::error!("{}", e.context("Failed to cache images")),
                 };

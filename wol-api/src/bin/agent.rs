@@ -1,11 +1,11 @@
-use std::convert;
-
 use anyhow::Context as _;
 use clap::Parser;
-use log::{debug, info};
+use itertools::Itertools as _;
+use log::{debug, info, warn};
 use tungstenite::connect;
 use wol_relay_server::{
-    agent::messages::AgentHello, machine::application::list_local_applications,
+    agent::messages::AgentHello,
+    machine::application::{list_local_applications, Application, ApplicationInfo},
 };
 
 #[derive(Parser, Debug)]
@@ -29,12 +29,18 @@ async fn main() -> anyhow::Result<()> {
     } = Args::parse();
     let domain = format!("{domain}/api/machine/agent");
 
-    let applications = list_local_applications()
+    let applications: Vec<ApplicationInfo> = list_local_applications()
         .context("Could not list locally installed applications")?
         .into_iter()
-        .map(convert::TryInto::try_into)
-        .collect::<Result<Vec<_>, _>>()
-        .context("Failed to list installed applications")?;
+        .map(Application::try_into)
+        .filter_map(|res: Result<ApplicationInfo, _>| match res {
+            Ok(app) => Some(app),
+            Err(err) => {
+                warn!("Error while listing local applications: {:#}", err);
+                None
+            }
+        })
+        .collect_vec();
 
     let (mut socket, response) = connect(&domain)
         .with_context(|| format!("Could not connect to backend server at {domain}"))?;
