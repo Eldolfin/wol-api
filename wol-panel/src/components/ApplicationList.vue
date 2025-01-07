@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { components } from "../lib/api/v1";
 import { AppsSharp } from "@vicons/ionicons5";
+import { baseUrl } from "../provides";
 
 type Applications = components["schemas"]["GroupedApplication"];
 type Application = components["schemas"]["ApplicationDisplay"];
@@ -52,17 +53,17 @@ const applications = computed<Map<string, Application[]>>(() => {
                       "
                     >
                       {{ application.name }}
-                      <!-- <n-image -->
-                      <!-- width="30" -->
-                      <!-- :src="baseUrl.origin + task.icon_url" -->
-                      <!-- preview-disabled -->
-                      <!-- > -->
-                      <!-- <template #error> -->
-                      <!-- <n-icon :size="30" color="lightGrey"> -->
-                      <!-- <ImageOutlineIcon /> -->
-                      <!-- </n-icon> -->
-                      <!-- </template> -->
-                      <!-- </n-image> -->
+                      <n-image
+                        width="30"
+                        :src="baseUrl.origin + application.icon"
+                        preview-disabled
+                      >
+                        <template #error>
+                          <n-icon :size="30" color="lightGrey">
+                            <ImageOutlineIcon />
+                          </n-icon>
+                        </template>
+                      </n-image>
                     </n-button>
                   </n-gi>
                 </template>

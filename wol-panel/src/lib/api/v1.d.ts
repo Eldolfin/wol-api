@@ -138,6 +138,8 @@ export interface components {
   schemas: {
     /** @description Application data for the web */
     ApplicationDisplay: {
+      /** @example /api/cache/images/steam_icon_526870.png */
+      icon: string;
       /** @example Satisfactory */
       name: string;
     };
