@@ -4352,6 +4352,7 @@ dependencies = [
  "image",
  "inotify",
  "itertools 0.14.0",
+ "lazy_static",
  "log",
  "ping-rs",
  "regex",

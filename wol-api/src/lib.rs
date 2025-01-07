@@ -4,3 +4,13 @@ pub mod config;
 pub mod consts;
 pub mod machine;
 pub mod utils;
+
+pub mod misc {
+    use directories::ProjectDirs;
+    use lazy_static::lazy_static;
+
+    lazy_static! {
+        pub static ref dirs: ProjectDirs = ProjectDirs::from("top", "eldolfin", "wol-api")
+            .expect("to be able to have project dirs");
+    }
+}

@@ -1,14 +1,12 @@
 use crate::config;
+use crate::misc::dirs;
 use anyhow::Context as _;
-use directories::ProjectDirs;
 use image::imageops::FilterType;
 use regex::Regex;
 use sha2::{Digest as _, Sha256};
 use std::{convert::Infallible, fs, path::Path};
-use tokio::{
-    fs::File,
-    io::{AsyncReadExt as _, AsyncWriteExt as _},
-};
+use tokio::io::AsyncWriteExt as _;
+use tokio::{fs::File, io::AsyncReadExt as _};
 use utoipa::OpenApi;
 use warp::{
     http,
@@ -51,7 +49,8 @@ fn url_to_filename(url: &str) -> String {
     format!("{safe_base_name}_{hash_part}.{extension}")
 }
 
-async fn cache_image(dirs: &ProjectDirs, url: &str) -> anyhow::Result<String> {
+// TODO: avoid repetition ?
+async fn cache_image_from_web(url: &str) -> anyhow::Result<String> {
     let cache_dir = dirs.cache_dir().join(CACHE_SUBFOLDER);
     fs::create_dir_all(&cache_dir)?;
     let key = url_to_filename(url);
@@ -78,17 +77,30 @@ async fn cache_image(dirs: &ProjectDirs, url: &str) -> anyhow::Result<String> {
     Ok(format!("/api/cache/images/{resized_filename_key}"))
 }
 
+pub fn cache_image(name: &str, icon: image::DynamicImage) -> anyhow::Result<String> {
+    let cache_dir = dirs.cache_dir().join(CACHE_SUBFOLDER);
+    fs::create_dir_all(&cache_dir)?;
+    let key = url_to_filename(name);
+    let resized_filename_key = format!("{key}_resize{IMAGE_SIZE}x{IMAGE_SIZE}.png");
+    let resized_filename = cache_dir.join(&resized_filename_key);
+
+    if !resized_filename.exists() {
+        let image = icon.resize(IMAGE_SIZE, IMAGE_SIZE, FilterType::CatmullRom);
+        image
+            .save(&resized_filename)
+            .context("Failed to write the resized image")?;
+    }
+    Ok(format!("/api/cache/images/{resized_filename_key}"))
+}
+
 #[expect(
     clippy::module_name_repetitions,
     reason = "it would be confusing otherwise i think"
 )]
-pub async fn cache_images(
-    dirs: &ProjectDirs,
-    mut config: config::Config,
-) -> anyhow::Result<config::Config> {
+pub async fn cache_images_from_web(mut config: config::Config) -> anyhow::Result<config::Config> {
     for machine in config.machines.values_mut() {
         for task in &mut machine.tasks {
-            task.icon_url = cache_image(dirs, &task.icon_url).await?;
+            task.icon_url = cache_image_from_web(&task.icon_url).await?;
         }
     }
     Ok(config)
@@ -104,7 +116,7 @@ pub async fn cache_images(
         ("filename" = String, Path, description = "Filename provided in the config")
     ),
 )]
-pub async fn images(dirs: ProjectDirs, filename: String) -> Result<Box<dyn Reply>, Infallible> {
+pub async fn images(filename: String) -> Result<Box<dyn Reply>, Infallible> {
     let filename = dirs.cache_dir().join(CACHE_SUBFOLDER).join(filename);
 
     match File::open(filename).await {
@@ -125,14 +137,10 @@ pub async fn images(dirs: ProjectDirs, filename: String) -> Result<Box<dyn Reply
     }
 }
 
-pub fn image_api(
-    dirs: &ProjectDirs,
-) -> anyhow::Result<impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone> {
-    let images = {
-        let dirs = dirs.clone();
-        warp::path!("cache" / "images" / String)
-            .and_then(move |filename: String| images(dirs.clone(), filename))
-    };
+pub fn image_api() -> anyhow::Result<impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone>
+{
+    let images =
+        warp::path!("cache" / "images" / String).and_then(move |filename: String| images(filename));
     let routes = images;
     Ok(routes)
 }
@@ -153,6 +161,7 @@ mod test {
         "file_with_no_extension_8beae082.png"
     )]
     #[case("https://example-site.com/", "example_site_b7effb5b.com")]
+    #[case("/home/example/filesystem/file.png", "file_136aee85.png")]
     fn test_url_to_filename(#[case] url: &str, #[case] expected_filename: &str) {
         assert_eq!(&url_to_filename(url), expected_filename);
     }

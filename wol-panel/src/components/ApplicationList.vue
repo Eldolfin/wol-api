@@ -31,7 +31,7 @@ const applications = computed<Map<string, Application[]>>(() => {
       Applications
     </n-button>
     <template #empty>
-      <n-scrollbar style="max-height: 40vh">
+      <n-scrollbar style="max-height: 40vh" v-if="applications_raw">
         <n-grid y-gap="12" :cols="1">
           <template
             v-for="([category, applications], i) in applications.entries()"
