@@ -1,4 +1,5 @@
 use anyhow::Context;
+mod icon;
 use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Pixel, Rgba};
 use itertools::Itertools as _;
 use log::warn;
@@ -85,7 +86,7 @@ impl Application {
         if path.is_absolute() {
             return Some(path);
         }
-        icon_finder::find_icon(path_str, 48, 1)
+        icon_finder::find_icon(path_str, cache::IMAGE_SIZE.try_into().unwrap(), 1)
         // .or(icon_finder::find_icon( "dialog-question".to_owned(), 48, 1, ))
     }
 
