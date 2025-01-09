@@ -16,7 +16,7 @@ use warp::{
 };
 
 const CACHE_SUBFOLDER: &str = "images";
-const IMAGE_SIZE: u32 = 48;
+pub const IMAGE_SIZE: u32 = 64;
 
 /// Converts a URL to a filename-safe format with a slug and hash.
 fn url_to_filename(url: &str) -> String {

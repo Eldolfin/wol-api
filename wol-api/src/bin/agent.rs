@@ -1,3 +1,7 @@
+use std::thread::sleep;
+use std::time::Duration;
+
+use anyhow::anyhow;
 use anyhow::Context as _;
 use clap::Parser;
 use itertools::Itertools as _;
@@ -7,6 +11,9 @@ use wol_relay_server::{
     agent::messages::AgentHello,
     machine::application::{list_local_applications, Application, ApplicationInfo},
 };
+
+const MAX_RETRIES: usize = 32;
+const RETRIES_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -42,8 +49,25 @@ async fn main() -> anyhow::Result<()> {
         })
         .collect_vec();
 
-    let (mut socket, response) = connect(&domain)
-        .with_context(|| format!("Could not connect to backend server at {domain}"))?;
+    let mut res = Err(anyhow!(
+        "unreachable? because MAX_RETRIES ({MAX_RETRIES}) > 0"
+    ));
+    for i in 0..MAX_RETRIES {
+        match connect(&domain)
+            .with_context(|| format!("Could not connect to backend server at {domain}"))
+        {
+            Ok(ok) => {
+                res = Ok(ok);
+                break;
+            }
+            Err(err) => {
+                warn!("#{}: {:#}", i, err);
+                res = Err(err);
+                sleep(RETRIES_INTERVAL);
+            }
+        }
+    }
+    let (mut socket, response) = res?;
 
     info!("Connected to the server");
     debug!("Response HTTP code: {}", response.status());

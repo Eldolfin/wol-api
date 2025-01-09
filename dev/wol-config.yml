@@ -8,3 +8,10 @@ machines:
       - name: Fake task
         icon_url: "https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png"
         command: ["echo", "hello", "world"]
+  reel:
+    mac: "02:42:ac:12:00:02"
+    ip: "127.0.0.1:22"
+    tasks:
+      - name: Fake task
+        icon_url: "https://upload.wikimedia.org/wikipedia/commons/8/88/Noia_64_apps_xeyes.png"
+        command: ["DISPLAY=:0 nix shell nixpkgs#xorg.xeyes --command xeyes"]

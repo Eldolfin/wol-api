@@ -189,7 +189,7 @@ function handleOpenTerminal() {
               </template>
               Connect via ssh
             </n-button>
-            <ApplicationList :applications="machine.applications!" />
+            <ApplicationList :applications="machine.applications" />
           </n-space>
         </n-button-group>
       </template>
