@@ -165,6 +165,7 @@ async fn connect(
                             channel.data(data.as_bytes()).await.unwrap();
                         }
                         else {
+                            // TODO: find out why the unwrap sometimes crashes here
                             let client_message: SshClientMessage = match serde_json::from_str(data.to_str().unwrap()) {
 
                                 Ok(msg) => msg,

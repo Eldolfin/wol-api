@@ -13,6 +13,10 @@ const api_path = (() => {
   let api_path: string;
   if (VITE_WOL_API_URL === "/") {
     api_path = window.location.href;
+  } else if (VITE_WOL_API_URL.startsWith(":")) {
+    const tmp = new URL(window.location.href);
+    tmp.port = VITE_WOL_API_URL.substring(1);
+    api_path = tmp.toString();
   } else {
     api_path = VITE_WOL_API_URL;
   }

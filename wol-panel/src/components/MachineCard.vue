@@ -132,7 +132,7 @@ function handleOpenTerminal() {
 }
 </script>
 <template>
-  <n-card :style="{ borderRadius: theme.borderRadius }" hoverable>
+  <n-card hoverable>
     <n-thing>
       <template #avatar>
         <n-avatar :style="{ backgroundColor: avatar_color }">
