@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { darkTheme } from "naive-ui";
 import WolPanel from "./src/WolPanel.vue";
+const showDevtools = import.meta.env.DEV;
 </script>
-
 <template>
   <div>
     <NuxtRouteAnnouncer />
     <n-config-provider :theme="darkTheme">
-      <n-notification-provider>
+      <n-theme-editor v-if="showDevtools">
+        <n-notification-provider>
+          <WolPanel style="height: 100vh; width: 100vw" />
+        </n-notification-provider>
+      </n-theme-editor>
+      <n-notification-provider v-else>
         <WolPanel style="height: 100vh; width: 100vw" />
       </n-notification-provider>
     </n-config-provider>

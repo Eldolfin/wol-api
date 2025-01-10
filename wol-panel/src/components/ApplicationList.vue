@@ -25,7 +25,6 @@ const applications = computed(() => {
   return new Array(
     ...new Array(...new Map([...map.entries()].sort()).entries()).map(
       (kv, i) => {
-        console.log(kv[1]);
         return { category: kv[0], apps: kv[1], key: kv[0], value: i };
       },
     ),
@@ -33,7 +32,7 @@ const applications = computed(() => {
 });
 </script>
 <template>
-  <n-popselect :options="[]" trigger="click">
+  <n-popselect :options="[]" trigger="click" :style="{ padding: '12px' }">
     <n-button>
       <template #icon>
         <n-icon>
@@ -44,14 +43,14 @@ const applications = computed(() => {
     </n-button>
     <template #empty>
       <n-scrollbar style="max-height: 60vh" v-if="props.applications">
-        <keepalive>
+        <KeepAlive>
           <n-virtual-list :item-size="42" :items="applications" item-resizable>
             <template #default="{ item, index }">
               <n-list-item>
                 <n-h2>
                   {{ item.category }}
                 </n-h2>
-                <n-grid x-gap="12" :cols="4">
+                <n-grid x-gap="12" :cols="6">
                   <template v-for="(application, i) in item.apps" :key="i">
                     <n-gi>
                       <n-button
@@ -61,12 +60,12 @@ const applications = computed(() => {
                           }
                         "
                         size="large"
-                        :style="{ height: '96px', width: '96px' }"
+                        :class="['applications-button']"
                       >
                         <n-grid :cols="1">
                           <n-gi>
                             <n-image
-                              width="32"
+                              width="64"
                               :src="baseUrl.origin + application.icon"
                               preview-disabled
                             >
@@ -77,9 +76,19 @@ const applications = computed(() => {
                               </template>
                             </n-image>
                           </n-gi>
-                          <n-gi>
+                          <n-gi
+                            :style="{
+                              width: '100%',
+                            }"
+                          >
                             <div
-                              :style="{ width: '32px', wordWrap: 'break-word' }"
+                              :style="{
+                                overflowWrap: 'anywhere',
+                                wordBreak: 'break-all',
+                                textWrap: 'balance',
+                                fontSize: '0.8rem',
+                                width: '100%',
+                              }"
                             >
                               {{ application.name }}
                             </div>
@@ -92,10 +101,16 @@ const applications = computed(() => {
               </n-list-item>
             </template>
           </n-virtual-list>
-        </keepalive>
+        </KeepAlive>
       </n-scrollbar>
     </template>
   </n-popselect>
 
   <!-- <n-tree block-line :data="applications" :selectable="false" /> -->
 </template>
+<style lang="postcss" scoped>
+.applications-button {
+  height: 120px;
+  width: 96px;
+}
+</style>
