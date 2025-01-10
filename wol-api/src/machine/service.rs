@@ -70,8 +70,6 @@ pub struct Machine {
 
 impl Machine {
     pub async fn update_state(&mut self) {
-        debug!("Checking state for {}", self.name);
-
         let ping_res = ping_rs::send_ping_async(
             &self.addr.ip(),
             Duration::from_secs(1),
@@ -224,12 +222,9 @@ impl Machine {
         if dry_run {
             return Ok(());
         }
-        let res = self
-            .exec_desktop_cmd(&app_command)
+        self.exec_desktop_cmd(&app_command)
             .await
-            .with_context(|| format!("Could not open app with command {app_command}"));
-        debug!("open app: {:#?}", res);
-        res?;
+            .with_context(|| format!("Could not open app with command {app_command}"))?;
         Ok(())
     }
 

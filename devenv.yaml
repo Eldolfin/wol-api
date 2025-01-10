@@ -4,4 +4,4 @@ inputs:
     url: github:NixOS/nixpkgs/nixos-unstable
 
 imports:
- - ./wol-panel
+  - ./wol-panel

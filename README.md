@@ -18,10 +18,10 @@
 - [ ]: nixos package and nix ci
 - [ ]: nixos module with a systemd service
 
-
-
 ## Resources
+
 Might be interesting at some point
+
 - https://motion.vueuse.org/api/use-motion
 - https://sound.vueuse.org/
 
