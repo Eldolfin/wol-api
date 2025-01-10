@@ -1,4 +1,3 @@
-use directories::ProjectDirs;
 use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     path::PathBuf,
@@ -17,7 +16,6 @@ use wol_relay_server::{
 };
 
 use clap::Parser;
-use lazy_static::lazy_static;
 use log::debug;
 
 #[derive(Parser, Debug)]

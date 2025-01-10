@@ -246,12 +246,14 @@ pub fn handlers(
         let store = store.clone();
         warp::path!("agent").and(ws()).map(move |ws: ws::Ws| {
             let store = store.clone();
-            ws.on_upgrade(move |websocket| {
-                let store = store.clone();
-                async move {
-                    agent(store, websocket).await;
-                }
-            })
+            ws.max_message_size(1024 << 20) // 1GB
+                .max_frame_size(1024 << 20) // 1GB
+                .on_upgrade(move |websocket| {
+                    let store = store.clone();
+                    async move {
+                        agent(store, websocket).await;
+                    }
+                })
         })
     };
 
