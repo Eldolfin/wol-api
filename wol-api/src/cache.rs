@@ -7,6 +7,7 @@ use sha2::{Digest as _, Sha256};
 use std::{convert::Infallible, fs, path::Path};
 use tokio::io::AsyncWriteExt as _;
 use tokio::{fs::File, io::AsyncReadExt as _};
+use tungstenite::ClientRequestBuilder;
 use utoipa::OpenApi;
 use warp::{
     http,
@@ -16,7 +17,7 @@ use warp::{
 };
 
 const CACHE_SUBFOLDER: &str = "images";
-pub const IMAGE_SIZE: u32 = 64;
+pub const IMAGE_SIZE: u32 = 128;
 
 /// Converts a URL to a filename-safe format with a slug and hash.
 fn url_to_filename(url: &str) -> String {
@@ -59,7 +60,14 @@ async fn cache_image_from_web(url: &str) -> anyhow::Result<String> {
     let resized_filename = cache_dir.join(&resized_filename_key);
 
     if !resized_filename.exists() {
-        let resp = reqwest::get(url).await?;
+        let resp = reqwest::Client::builder()
+            .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.1")
+            .build()?
+            .get(url)
+            .send()
+            .await?
+            .error_for_status()
+            .with_context(|| format!("Failed to fetch image at {url}"))?;
         let bytes = resp.bytes().await?;
         File::create(&filename)
             .await
