@@ -5,6 +5,7 @@ use crate::{
     consts::{MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
     machine::ssh,
 };
+use urlencoding;
 
 use core::convert::Infallible;
 use futures_util::{SinkExt as _, StreamExt as _};
@@ -24,7 +25,7 @@ use warp::{
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(list, wake, shutdown, task, list_ws, agent),
+    paths(list, wake, shutdown, task, list_ws, agent, open_application),
     nest(
         (path = "/ssh", api = ssh::api::Api)
     ),
@@ -179,6 +180,40 @@ pub async fn task(
 
 #[utoipa::path(
     post,
+    path = "/{name}/open_application/{application_name}",
+    responses(
+        (status = 200, description = "Application opened successfully"),
+    ),
+    params(
+        ("application_name" = String, Path, description = "Name of the application")
+    ),
+)]
+#[expect(clippy::significant_drop_tightening, reason = "todo fix mais flemme")]
+pub async fn open_application(
+    store: Store,
+    name: String,
+    application_name: String,
+    dry_run: bool,
+) -> Result<impl Reply, Infallible> {
+    let application_name = urlencoding::decode(&application_name).unwrap();
+    let mut lock = store.lock().await;
+    let Some(machine) = lock.by_name_mut(&name) else {
+        return Ok(reply::with_status(
+            "Machine does not exist".to_owned(),
+            http::StatusCode::NOT_FOUND,
+        ));
+    };
+    match machine.open_app(&application_name, dry_run).await {
+        Ok(()) => Ok(reply::with_status("Success".to_owned(), StatusCode::OK)),
+        Err(msg) => Ok(reply::with_status(
+            format!("{msg:#}"),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        )),
+    }
+}
+
+#[utoipa::path(
+    post,
     path = "/{name}/wake",
     responses(
         (status = 200, description = "Woke the machine successfully"),
@@ -273,6 +308,12 @@ pub fn handlers(
             .and(json())
             .and_then(move |name, body: Task| task(store.clone(), name, dry_run, body))
     };
+    let open_application = {
+        let store = store.clone();
+        warp::path!(String / "open_application" / String).and_then(move |name, application_name| {
+            open_application(store.clone(), name, application_name, dry_run)
+        })
+    };
 
     let check_state_thread = {
         let store = store.clone();
@@ -292,7 +333,8 @@ pub fn handlers(
         .or(task)
         .or(list_ws)
         .or(ssh_handlers)
-        .or(agent);
+        .or(agent)
+        .or(open_application);
 
     Ok((routes, check_state_thread))
 }
