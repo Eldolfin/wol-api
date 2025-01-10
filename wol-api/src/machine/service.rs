@@ -8,6 +8,7 @@ use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::{
     net::{SocketAddr, ToSocketAddrs as _},
+    process,
     sync::{self, Arc},
     time::Duration,
 };
@@ -63,6 +64,8 @@ pub struct Machine {
     #[serde(skip_serializing)]
     pub addr: SocketAddr,
     pub applications: Option<GroupedApplication>,
+    #[serde(skip)]
+    applications_list: Vec<ApplicationInfo>,
 }
 
 impl Machine {
@@ -203,11 +206,45 @@ impl Machine {
             state: State::default(),
             tasks: Vec::new(),
             applications: None,
+            applications_list: vec![],
         })
     }
 
     pub fn set_applications(&mut self, applications: Vec<ApplicationInfo>) {
-        self.applications = Some(applications.into());
+        self.applications = Some(applications.clone().into());
+        self.applications_list = applications;
+    }
+
+    pub async fn open_app(&self, application_name: &str, dry_run: bool) -> anyhow::Result<()> {
+        let app_command = self
+            .find_application(application_name)
+            .ok_or_else(|| anyhow::anyhow!("No application found with name {application_name}"))?
+            .exec
+            .clone();
+        if dry_run {
+            return Ok(());
+        }
+        let res = self
+            .exec_desktop_cmd(&app_command)
+            .await
+            .with_context(|| format!("Could not open app with command {app_command}"));
+        debug!("open app: {:#?}", res);
+        res?;
+        Ok(())
+    }
+
+    fn find_application(&self, application_name: &str) -> Option<&ApplicationInfo> {
+        self.applications_list
+            .iter()
+            .find(|app| app.name == application_name)
+    }
+
+    async fn exec_desktop_cmd(&self, app_command: &str) -> Result<process::Output, std::io::Error> {
+        // TODO: unhardcode display
+        self.ssh()
+            .arg(format!("DISPLAY=:0 {app_command} >/dev/null 2>&1 & disown"))
+            .output()
+            .await
     }
 }
 

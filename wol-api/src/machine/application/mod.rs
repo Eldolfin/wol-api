@@ -28,10 +28,10 @@ pub struct Application {
 #[expect(clippy::module_name_repetitions, reason = "more clear")]
 /// Serializable application
 pub struct ApplicationInfo {
-    name: String,
+    pub name: String,
     icon_bytes: Vec<u8>,
     icon_name: String,
-    exec: String,
+    pub exec: String,
     category: String,
 }
 impl ApplicationInfo {
