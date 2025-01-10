@@ -7,14 +7,14 @@ const showDevtools = import.meta.env.DEV;
   <div>
     <NuxtRouteAnnouncer />
     <n-config-provider :theme="darkTheme">
-      <n-theme-editor v-if="showDevtools">
-        <n-notification-provider>
-          <WolPanel style="height: 100vh; width: 100vw" />
-        </n-notification-provider>
-      </n-theme-editor>
-      <n-notification-provider v-else>
-        <WolPanel style="height: 100vh; width: 100vw" />
-      </n-notification-provider>
+      <template v-if="showDevtools">
+        <n-theme-editor>
+          <WolPanel />
+        </n-theme-editor>
+      </template>
+      <template v-else>
+        <WolPanel />
+      </template>
     </n-config-provider>
   </div>
 </template>

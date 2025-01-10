@@ -46,11 +46,16 @@ const applications = computed(() => {
         <KeepAlive>
           <n-virtual-list :item-size="42" :items="applications" item-resizable>
             <template #default="{ item, index }">
-              <n-list-item>
+              <n-list-item :style="{ marginTop: '20px' }">
+                <n-divider n-if="index !== 0" />
                 <n-h2>
                   {{ item.category }}
                 </n-h2>
-                <n-grid x-gap="12" :cols="6">
+                <n-grid
+                  x-gap="12"
+                  cols="1 s:2 m:4 l:6 xl:7 2xl:7"
+                  responsive="screen"
+                >
                   <template v-for="(application, i) in item.apps" :key="i">
                     <n-gi>
                       <n-button
@@ -112,5 +117,6 @@ const applications = computed(() => {
 .applications-button {
   height: 120px;
   width: 96px;
+  margin: 4px;
 }
 </style>
