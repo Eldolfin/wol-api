@@ -84,6 +84,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/machine/{name}/open_application/{application_name}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["open_application"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/machine/{name}/shutdown": {
     parameters: {
       query?: never;
@@ -303,6 +319,29 @@ export interface operations {
     responses: {
       /** @description Switch to websocket and transfer terminal data */
       101: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  open_application: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Name of the machine */
+        name: string;
+        /** @description Name of the application */
+        application_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Application opened successfully */
+      200: {
         headers: {
           [name: string]: unknown;
         };

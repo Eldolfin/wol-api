@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import type { components } from "../lib/api/v1";
 import { AppsSharp } from "@vicons/ionicons5";
-import { baseUrl } from "../provides";
-import { ImageOutline } from "@vicons/ionicons5";
 
 type Applications = components["schemas"]["GroupedApplication"];
-type Application = components["schemas"]["ApplicationDisplay"];
 
 const props = defineProps<{
+  machine_name: string;
   applications: Applications | null | undefined;
 }>();
 
@@ -47,7 +45,7 @@ const applications = computed(() => {
           <n-virtual-list :item-size="42" :items="applications" item-resizable>
             <template #default="{ item, index }">
               <n-list-item :style="{ marginTop: '20px' }">
-                <n-divider n-if="index !== 0" />
+                <n-divider :n-if="index !== 0" />
                 <n-h2>
                   {{ item.category }}
                 </n-h2>
@@ -58,48 +56,10 @@ const applications = computed(() => {
                 >
                   <template v-for="(application, i) in item.apps" :key="i">
                     <n-gi>
-                      <n-button
-                        @click="
-                          () => {
-                            throw 'todo';
-                          }
-                        "
-                        size="large"
-                        :class="['applications-button']"
-                      >
-                        <n-grid :cols="1">
-                          <n-gi>
-                            <n-image
-                              width="64"
-                              :src="baseUrl.origin + application.icon"
-                              preview-disabled
-                            >
-                              <template #error>
-                                <n-icon color="lightGrey">
-                                  <ImageOutline />
-                                </n-icon>
-                              </template>
-                            </n-image>
-                          </n-gi>
-                          <n-gi
-                            :style="{
-                              width: '100%',
-                            }"
-                          >
-                            <div
-                              :style="{
-                                overflowWrap: 'anywhere',
-                                wordBreak: 'break-all',
-                                textWrap: 'balance',
-                                fontSize: '0.8rem',
-                                width: '100%',
-                              }"
-                            >
-                              {{ application.name }}
-                            </div>
-                          </n-gi>
-                        </n-grid>
-                      </n-button>
+                      <ApplicationButton
+                        :application="application"
+                        :machine_name="machine_name"
+                      />
                     </n-gi>
                   </template>
                 </n-grid>

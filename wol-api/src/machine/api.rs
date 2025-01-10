@@ -185,6 +185,7 @@ pub async fn task(
         (status = 200, description = "Application opened successfully"),
     ),
     params(
+        ("name" = String, Path, description = "Name of the machine"),
         ("application_name" = String, Path, description = "Name of the application")
     ),
 )]

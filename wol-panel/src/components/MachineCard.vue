@@ -9,6 +9,7 @@ import {
 } from "@vicons/ionicons5";
 import { api_client, terminal_pane_provide, baseUrl } from "../provides";
 
+// TODO: change to define props
 const machine = defineModel<components["schemas"]["Machine"]>("machine", {
   required: true,
 });
@@ -142,7 +143,11 @@ function handleOpenTerminal() {
           </n-icon>
         </n-avatar>
       </template>
-      <template #header> {{ name }} </template>
+      <template #header>
+        <n-h1 :style="{ margin: '0' }">
+          {{ name }}
+        </n-h1>
+      </template>
       <template #description>
         {{ `state: ${state}` }}
         <br />
@@ -189,7 +194,10 @@ function handleOpenTerminal() {
               </template>
               Connect via ssh
             </n-button>
-            <ApplicationList :applications="machine.applications" />
+            <ApplicationList
+              :applications="machine.applications"
+              :machine_name="machine.name"
+            />
           </n-space>
         </n-button-group>
       </template>
