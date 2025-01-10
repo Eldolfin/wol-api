@@ -19,3 +19,6 @@ machines:
         icon_url: "https://static-00.iconduck.com/assets.00/nixos-icon-512x445-bskgvwu7.png"
         command:
           ["DISPLAY=:0 alacritty -e systemswitch.py -u -b; sudo shutdown 0"]
+      - name: xeyes
+        icon_url: "https://upload.wikimedia.org/wikipedia/commons/8/88/Noia_64_apps_xeyes.png"
+        command: ["DISPLAY=:0 nix shell nixpkgs#xorg.xeyes --command xeyes"]
