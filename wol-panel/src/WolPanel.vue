@@ -45,48 +45,50 @@ watch(
 );
 </script>
 <template>
-  <n-card
-    :style="{ height: '100%' }"
-    :bordered="false"
-    content-style="padding: 0;"
-  >
-    <n-split
-      v-model:size="splitSize"
-      direction="vertical"
+  <div :style="{ overflow: 'hidden' }">
+    <n-card
       :style="{ height: '100%' }"
-      :disabled="connectedMachines.length === 0"
+      :bordered="false"
+      content-style="padding: 0;"
     >
-      <template #1>
-        <n-card :style="{ height: '100%' }">
-          <MachineList :style="{ height: '100%' }" />
-        </n-card>
-      </template>
-      <template v-if="connectedMachines.length > 0" #2>
-        <n-card :style="{ height: '100%' }">
-          <n-tabs
-            v-model:value="focusedTerminal"
-            type="card"
-            closable
-            :style="{ height: '100%' }"
-            @close="handleCloseTerminal"
-          >
-            <n-tab-pane
-              v-for="session in connectedMachines"
-              :key="session.sessionId"
-              :tab="session.machineName"
-              :name="session.sessionId"
+      <n-split
+        v-model:size="splitSize"
+        direction="vertical"
+        :style="{ height: '100%' }"
+        :disabled="connectedMachines.length === 0"
+      >
+        <template #1>
+          <n-card :style="{ height: '100%' }">
+            <MachineList :style="{ height: '100%' }" />
+          </n-card>
+        </template>
+        <template v-if="connectedMachines.length > 0" #2>
+          <n-card :style="{ height: '100%' }">
+            <n-tabs
+              v-model:value="focusedTerminal"
+              type="card"
+              closable
               :style="{ height: '100%' }"
-              display-directive="show"
+              @close="handleCloseTerminal"
             >
-              <Terminal
+              <n-tab-pane
+                v-for="session in connectedMachines"
+                :key="session.sessionId"
+                :tab="session.machineName"
+                :name="session.sessionId"
                 :style="{ height: '100%' }"
-                :machine-name="session.machineName"
-                @close="() => handleCloseTerminal(session.sessionId)"
-              />
-            </n-tab-pane>
-          </n-tabs>
-        </n-card>
-      </template>
-    </n-split>
-  </n-card>
+                display-directive="show"
+              >
+                <Terminal
+                  :style="{ height: '100%' }"
+                  :machine-name="session.machineName"
+                  @close="() => handleCloseTerminal(session.sessionId)"
+                />
+              </n-tab-pane>
+            </n-tabs>
+          </n-card>
+        </template>
+      </n-split>
+    </n-card>
+  </div>
 </template>
