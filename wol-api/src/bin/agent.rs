@@ -1,11 +1,10 @@
-use std::thread::sleep;
-use std::time::Duration;
-
 use anyhow::anyhow;
 use anyhow::Context as _;
 use clap::Parser;
-use itertools::Itertools as _;
 use log::{debug, info, warn};
+use rayon::prelude::*;
+use std::thread::sleep;
+use std::time::Duration;
 use tungstenite::connect;
 use wol_relay_server::{
     agent::messages::AgentHello,
@@ -36,10 +35,13 @@ async fn main() -> anyhow::Result<()> {
     } = Args::parse();
     let domain = format!("{domain}/api/machine/agent");
 
-    let applications: Vec<ApplicationInfo> = list_local_applications()
+    info!("Listing applications...");
+    let applications = list_local_applications()
         .await
-        .context("Could not list locally installed applications")?
-        .into_iter()
+        .context("Could not list locally installed applications")?;
+    info!("Reading applications icons...");
+    let applications: Vec<ApplicationInfo> = applications
+        .into_par_iter()
         .map(Application::try_into)
         .filter_map(|res: Result<ApplicationInfo, _>| match res {
             Ok(app) => Some(app),
@@ -48,12 +50,15 @@ async fn main() -> anyhow::Result<()> {
                 None
             }
         })
-        .collect_vec();
+        .collect();
 
     let mut res = Err(anyhow!(
         "unreachable? because MAX_RETRIES ({MAX_RETRIES}) > 0"
     ));
+
+    info!("Connecting to backend at {}", &domain);
     for i in 0..MAX_RETRIES {
+        debug!("Try #{}/{}", i, MAX_RETRIES);
         match connect(&domain)
             .with_context(|| format!("Could not connect to backend server at {domain}"))
         {

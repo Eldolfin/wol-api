@@ -12,11 +12,18 @@ use std::{
     iter,
     path::{Path, PathBuf},
     str::FromStr as _,
+    sync::LazyLock,
 };
 use thiserror::Error;
 use tokio::{fs::File, io::AsyncReadExt as _};
 use utoipa::ToSchema;
-use xdgkit::{basedir, categories::Categories, desktop_entry::DesktopEntry, icon_finder};
+use xdgkit::{
+    basedir,
+    categories::Categories,
+    desktop_entry::DesktopEntry,
+    icon_finder::{generate_dir_list, multiple_find_icon, user_theme, DirList},
+    icon_theme::IconTheme,
+};
 
 use crate::cache;
 
@@ -72,6 +79,10 @@ pub struct GroupedApplication {
     groups: HashMap<String, Vec<ApplicationDisplay>>,
 }
 
+static DIR_LIST: LazyLock<Vec<DirList>> = LazyLock::new(generate_dir_list);
+static THEME: LazyLock<IconTheme> =
+    LazyLock::new(|| user_theme(DIR_LIST.clone()).unwrap_or_else(IconTheme::empty));
+
 impl Application {
     pub async fn parse(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let mut buf = String::new();
@@ -91,7 +102,14 @@ impl Application {
         if path.is_absolute() {
             return Some(path);
         }
-        icon_finder::find_icon(path_str, cache::IMAGE_SIZE.try_into().unwrap(), 1)
+
+        multiple_find_icon(
+            path_str,
+            cache::IMAGE_SIZE.try_into().unwrap(),
+            1,
+            DIR_LIST.to_owned(),
+            THEME.to_owned(),
+        )
         // .or(icon_finder::find_icon( "dialog-question".to_owned(), 48, 1, ))
     }
 
@@ -111,7 +129,7 @@ pub async fn list_local_applications() -> anyhow::Result<Vec<Application>> {
         .flat_map(iter::IntoIterator::into_iter)
         .filter_map(|res| res.ok().map(|entry| entry.path()))
         .filter(|path| path.is_file() && path.extension() == Some(OsStr::new("desktop")))
-        .map(|path| Application::parse(path));
+        .map(Application::parse);
     Ok(join_all(futures)
         .await
         .into_iter()
@@ -170,17 +188,16 @@ impl TryInto<ApplicationInfo> for Application {
         let category = category.to_owned();
 
         // nice 😐️
-        let icon_bytes =
-            (|| Some(ImageReader::open(self.icon()?).ok()?.decode().ok()?))().map(|icon| {
-                icon.pixels()
-                    .flat_map(|(_, _, rgba)| rgba.channels().to_vec())
-                    .collect_vec()
-            });
+        let icon_bytes = (|| ImageReader::open(self.icon()?).ok()?.decode().ok())().map(|icon| {
+            icon.pixels()
+                .flat_map(|(_, _, rgba)| rgba.channels().to_vec())
+                .collect_vec()
+        });
 
         #[expect(clippy::map_unwrap_or, reason = "unreachable :)")]
         let icon_name = self
             .icon()
-            .map(|path| path.file_name().unwrap().to_str().unwrap().to_string())
+            .map(|path| path.file_name().unwrap().to_str().unwrap().to_owned())
             .unwrap_or_else(|| "no-icon".to_string());
 
         Ok(ApplicationInfo {
