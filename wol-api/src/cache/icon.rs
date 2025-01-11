@@ -126,8 +126,8 @@ fn calculate_icon_score(search_result: &SearchResult) -> f32 {
     // ****************************
     let search_engine_score = search_result.score * SEARCH_ENGINE_RANK_WEIGHT;
 
-    let score = squariness_score + format_score + search_engine_score + resolution_matching_score;
-    return score;
+    
+    squariness_score + format_score + search_engine_score + resolution_matching_score
 }
 
 async fn find_icon(application_name: &str) -> anyhow::Result<DynamicImage> {
@@ -140,7 +140,7 @@ async fn find_icon(application_name: &str) -> anyhow::Result<DynamicImage> {
     //     - it should be png or svg
     //   - search engine rank
 
-    let search_query = format!("{} logo", application_name);
+    let search_query = format!("{application_name} logo");
     let response = searxng_api::query_image(search_query).await?;
     let best_icon = response
         .results
