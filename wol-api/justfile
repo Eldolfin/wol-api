@@ -5,17 +5,17 @@ export RUST_LOG_STYLE := "always"
 default:
     @just --list
 
-# Auto-format the source tree
 fmt:
     treefmt
 
-# Run 'cargo run' on the project
 run *ARGS:
     cargo run {{ARGS}}
 
-# Run 'cargo watch' to run the project (auto-recompiles)
+watch-cargo *ARGS:
+     git ls-files | entr -cr cargo {{ARGS}}
+
 watch *ARGS:
-     git ls-files | entr -cr cargo run {{ARGS}}
+     @just watch-cargo run {{ARGS}}
 
 lint:
     cargo clippy
@@ -30,3 +30,7 @@ flamegraph-agent:
     sudo echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
     export CARGO_PROFILE_RELEASE_DEBUG=true
     cargo flamegraph --bin agent -- reel ws://127.0.0.1:3030
+
+watch-test:
+    export RUST_LOG="debug"
+    @just watch-cargo nextest run -j num-cpus --fail-fast

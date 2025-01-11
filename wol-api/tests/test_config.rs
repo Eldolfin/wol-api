@@ -9,49 +9,51 @@ use figment::{
     providers::{Format as _, Yaml},
     Figment,
 };
-use rstest::rstest;
+use log::debug;
+use rstest::{fixture, rstest};
 use tempfile::TempDir;
 use tokio::time::timeout;
 use wol_relay_server::config::{self, Config};
-use wol_relay_server::test::logfxt;
+use wol_relay_server::test::{self};
 
+#[fixture]
 fn test_config() -> Config {
+    test::logfxt();
+    let config_str = include_str!("./simple_config.yml");
     Figment::new()
-        .merge(Yaml::string(include_str!("./simple_config.yml")))
+        .merge(Yaml::string(&config_str))
         .extract()
-        .context("Failed to parse config file")
+        .with_context(|| format!("Failed to parse test static config file: {config_str}"))
         .unwrap()
 }
 
 #[rstest]
 #[tokio::test]
-async fn config_reload(logfxt: ()) -> Result<()> {
+async fn config_reload(mut test_config: Config) -> Result<()> {
     const AUTO_RELOAD: bool = true;
 
     let dir = TempDir::new()?;
 
     let config_filename = dir.path().join("wol-config.yml");
 
-    let mut in_memory_config = test_config();
-
     let config_file = File::create_new(&config_filename).context("Could not create config file")?;
 
-    serde_yaml::to_writer(&config_file, &in_memory_config)
+    serde_yaml::to_writer(&config_file, &test_config)
         .with_context(|| format!("Failed to write to {}", config_filename.display()))?;
 
     let (in_file_config, mut config_changed) = config::open(&config_filename, AUTO_RELOAD)?;
 
     assert_eq!(
         in_file_config.lock().unwrap().clone(),
-        in_memory_config,
+        test_config,
         "Config differs before being changed"
     );
 
-    in_memory_config.machines.get_mut("machine1").unwrap().ip = "192.168.1.1".into();
+    test_config.machines.get_mut("machine1").unwrap().ip = "192.168.1.1".into();
 
     let config_file = File::create(&config_filename).context("Could not re open config file")?;
 
-    serde_yaml::to_writer(&config_file, &in_memory_config)
+    serde_yaml::to_writer(&config_file, &test_config)
         .with_context(|| format!("Failed to write to {}", config_filename.display()))?;
 
     // wait for the config be reloaded
@@ -61,7 +63,7 @@ async fn config_reload(logfxt: ()) -> Result<()> {
 
     assert_eq!(
         in_file_config.lock().unwrap().clone(),
-        in_memory_config,
+        test_config,
         "Config differs after being changed"
     );
 
