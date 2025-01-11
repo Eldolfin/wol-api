@@ -4627,6 +4627,7 @@ dependencies = [
  "lazy_static",
  "log",
  "ping-rs",
+ "rayon",
  "regex",
  "reqwest",
  "rstest",

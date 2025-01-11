@@ -31,6 +31,7 @@
         entr
         rustfmt
         cargo-nextest
+        cargo-flamegraph
       ];
       env = {
         CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";

@@ -1,4 +1,4 @@
-export RUST_LOG := "wol_relay_server=debug"
+export RUST_LOG := "info,wol_relay_server=debug,agent=debug,backend=debug"
 # export RUST_LOG := "debug"
 export RUST_LOG_STYLE := "always"
 
@@ -19,3 +19,14 @@ watch *ARGS:
 
 lint:
     cargo clippy
+
+watch-agent:
+    @just watch --bin agent -- reel ws://localhost:3030
+
+watch-backend:
+    @just watch --bin backend -- -c ../dev/wol-config.yml
+
+flamegraph-agent:
+    sudo echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+    export CARGO_PROFILE_RELEASE_DEBUG=true
+    cargo flamegraph --bin agent -- reel ws://127.0.0.1:3030
