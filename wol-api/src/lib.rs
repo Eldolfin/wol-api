@@ -14,3 +14,17 @@ pub mod misc {
             .expect("to be able to have project dirs");
     }
 }
+
+pub mod test {
+    use std::sync::Once;
+
+    use rstest::fixture;
+
+    #[fixture]
+    pub fn logfxt() {
+        static ONCE: Once = Once::new();
+        ONCE.call_once(|| {
+            env_logger::init();
+        });
+    }
+}

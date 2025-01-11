@@ -107,7 +107,7 @@ pub async fn agent(store: Store, websocket: WebSocket) {
 
     let mut lock = store.lock().await;
     if let Some(machine) = lock.by_name_mut(&agent_hello.machine_name) {
-        machine.set_applications(agent_hello.applications);
+        machine.set_applications(agent_hello.applications).await;
         debug!(
             "Machine `{}` successfully sent its list of applications",
             machine.name

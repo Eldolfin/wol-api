@@ -1,3 +1,5 @@
+pub mod icon;
+pub mod searxng_api;
 use crate::config;
 use crate::misc::dirs;
 use anyhow::Context as _;
@@ -7,7 +9,6 @@ use sha2::{Digest as _, Sha256};
 use std::{convert::Infallible, fs, path::Path};
 use tokio::io::AsyncWriteExt as _;
 use tokio::{fs::File, io::AsyncReadExt as _};
-use tungstenite::ClientRequestBuilder;
 use utoipa::OpenApi;
 use warp::{
     http,
@@ -60,29 +61,28 @@ async fn cache_image_from_web(url: &str) -> anyhow::Result<String> {
     let resized_filename = cache_dir.join(&resized_filename_key);
 
     if !resized_filename.exists() {
-        let resp = reqwest::Client::builder()
-            .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.1")
-            .build()?
-            .get(url)
-            .send()
-            .await?
-            .error_for_status()
-            .with_context(|| format!("Failed to fetch image at {url}"))?;
-        let bytes = resp.bytes().await?;
-        File::create(&filename)
-            .await
-            .with_context(|| format!("Failed to create image file {}", filename.display()))?
-            .write_all(&bytes)
-            .await
-            .with_context(|| format!("Failed to write image to {}", filename.display()))?;
-        let image = image::load_from_memory(&bytes)
-            .with_context(|| format!("Failed to load image {}", filename.display()))?
-            .resize(IMAGE_SIZE, IMAGE_SIZE, FilterType::CatmullRom);
+        let image = download_image(url).await?;
         image
             .save(&resized_filename)
             .context("Failed to write the resized image")?;
     }
     Ok(format!("/api/cache/images/{resized_filename_key}"))
+}
+
+async fn download_image(url: &str) -> anyhow::Result<image::DynamicImage> {
+    let resp = reqwest::Client::builder()
+        .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.1")
+        .build()?
+        .get(url)
+        .send()
+        .await?
+        .error_for_status()
+        .with_context(|| format!("Failed to fetch image at {url}"))?;
+    let bytes = resp.bytes().await?;
+    let image = image::load_from_memory(&bytes)
+        .with_context(|| format!("Failed to load downloaded image from `{}`", &url))?
+        .resize(IMAGE_SIZE, IMAGE_SIZE, FilterType::CatmullRom);
+    Ok(image)
 }
 
 pub fn cache_image(name: &str, icon: image::DynamicImage) -> anyhow::Result<String> {

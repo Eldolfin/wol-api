@@ -37,6 +37,7 @@ async fn main() -> anyhow::Result<()> {
     let domain = format!("{domain}/api/machine/agent");
 
     let applications: Vec<ApplicationInfo> = list_local_applications()
+        .await
         .context("Could not list locally installed applications")?
         .into_iter()
         .map(Application::try_into)

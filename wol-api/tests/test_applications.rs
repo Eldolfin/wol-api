@@ -1,9 +1,11 @@
 use itertools::Itertools as _;
 use rstest::rstest;
 use std::path::PathBuf;
+use std::time::Duration;
 use wol_relay_server::machine::application::{list_local_applications, Application};
 
 #[rstest]
+#[timeout(Duration::from_secs(1))]
 #[case("Satisfactory.desktop", "Satisfactory", None)]
 #[case(
     "jetbrains-pycharm-4735460c-16ab-49d5-ba0f-c0d6a1f1099a.desktop",
@@ -12,13 +14,14 @@ use wol_relay_server::machine::application::{list_local_applications, Applicatio
 )]
 #[case("net.lutris.outerwilds3-3.desktop", "outerwilds3", None)]
 #[case("userapp-Firefox-5MR5S2.desktop", "Firefox", None)]
-fn test_parse_application(
+#[tokio::test]
+async fn test_parse_application(
     #[case] filename: &str,
     #[case] name: &str,
     #[case] icon_path: Option<&str>,
 ) -> anyhow::Result<()> {
     let dir = PathBuf::from("tests/assets/applications/");
-    let application = Application::parse(dir.join(filename))?;
+    let application = Application::parse(dir.join(filename)).await?;
     assert_eq!(
         application
             .name()
@@ -37,9 +40,10 @@ fn test_parse_application(
     Ok(())
 }
 
-#[test]
-fn test_list_applications() -> anyhow::Result<()> {
-    let mut applications: Vec<String> = list_local_applications()?
+#[tokio::test]
+async fn test_list_applications() -> anyhow::Result<()> {
+    let mut applications: Vec<String> = list_local_applications()
+        .await?
         .into_iter()
         .filter_map(|application| application.name().clone())
         .unique()
@@ -58,6 +62,7 @@ fn test_list_applications() -> anyhow::Result<()> {
             "Coin pusher casino",
             "Cool Retro Term",
             "CopyQ",
+            "Discord",
             "Emote",
             "Firefox",
             "Flameshot",
@@ -92,7 +97,6 @@ fn test_list_applications() -> anyhow::Result<()> {
             "Steam Linux Runtime 3.0 (sniper)",
             "Thunderbird",
             "Ubuntu-22-04",
-            "Vesktop",
             "Vim",
             "Volume Control",
             "Widget Factory",
