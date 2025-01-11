@@ -13,9 +13,14 @@
 
         domain = mkOption {
           type = types.str;
-          default = "";
           example = "192.168.1.1:3001";
           description = "The domain name for the wol-backend";
+        };
+
+        machine-name = mkOption {
+          type = types.str;
+          example = "tour";
+          description = "The machine name identify as to the backend";
         };
       };
 
@@ -27,7 +32,7 @@
             pkg = self.packages.${pkgs.system}.default;
           in {
             Restart = "on-failure";
-            ExecStart = "${pkg}/bin/agent ${cfg.domain}";
+            ExecStart = "${pkg}/bin/agent ${cfg.machine-name} ${cfg.domain}";
             DynamicUser = "yes";
             RuntimeDirectory = "eldolfin.wol-agent";
             RuntimeDirectoryMode = "0755";
