@@ -44,18 +44,17 @@ pub struct ApplicationInfo {
 }
 impl ApplicationInfo {
     fn icon(&self) -> Option<image::DynamicImage> {
-        if let Some(icon_bytes) = &self.icon_bytes {
+        self.icon_bytes.as_ref().map(|icon_bytes| {
             #[expect(
                 clippy::cast_possible_truncation,
+                clippy::cast_precision_loss,
                 reason = "It won't be truncated because it's < 2^52 or something"
             )]
             let size = ((icon_bytes.len() / 4) as f64).sqrt() as u32;
             let mut buf: ImageBuffer<Rgba<u8>, Vec<_>> = ImageBuffer::new(size, size);
             buf.copy_from_slice(icon_bytes);
-            Some(DynamicImage::from(buf))
-        } else {
-            None
-        }
+            DynamicImage::from(buf)
+        })
     }
 
     fn icon_name(&self) -> &str {
@@ -84,7 +83,7 @@ static THEME: LazyLock<IconTheme> =
     LazyLock::new(|| user_theme(DIR_LIST.clone()).unwrap_or_else(IconTheme::empty));
 
 impl Application {
-    pub async fn parse(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+    pub async fn parse(path: impl AsRef<Path> + Send + Sync) -> anyhow::Result<Self> {
         let mut buf = String::new();
         File::open(&path).await?.read_to_string(&mut buf).await?;
 

@@ -55,6 +55,11 @@ impl From<SearchResult> for IconMetadata {
 ///   - format
 ///     - it should be png or svg
 ///   - search engine rank
+#[expect(
+    clippy::cast_precision_loss,
+    clippy::float_arithmetic,
+    reason = "It won't be truncated because it's < 2^52 or something"
+)]
 fn calculate_icon_score(search_result: &SearchResult) -> f32 {
     const MIN: f32 = -1.0;
 
@@ -165,7 +170,11 @@ mod test {
     #[case("firefox")]
     #[case("firefox")]
     #[tokio::test]
-    async fn test_find_icon(logfxt: (), #[case] appname: String) {
-        find_icon(&appname).await;
+    async fn test_find_icon(
+        #[expect(unused_variables, reason = "fixture")] logfxt: (),
+        #[case] appname: String,
+    ) -> anyhow::Result<()> {
+        find_icon(&appname).await?;
+        Ok(())
     }
 }

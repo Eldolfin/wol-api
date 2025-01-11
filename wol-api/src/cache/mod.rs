@@ -55,7 +55,6 @@ async fn cache_image_from_web(url: &str) -> anyhow::Result<String> {
     let cache_dir = dirs.cache_dir().join(CACHE_SUBFOLDER);
     fs::create_dir_all(&cache_dir)?;
     let key = url_to_filename(url);
-    let filename = cache_dir.join(&key);
     let resized_filename_key = format!("{key}_resize{IMAGE_SIZE}x{IMAGE_SIZE}.png");
     let resized_filename = cache_dir.join(&resized_filename_key);
 

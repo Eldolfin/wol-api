@@ -9,7 +9,6 @@ use figment::{
     providers::{Format as _, Yaml},
     Figment,
 };
-use log::debug;
 use rstest::{fixture, rstest};
 use tempfile::TempDir;
 use tokio::time::timeout;
@@ -21,7 +20,7 @@ fn test_config() -> Config {
     test::logfxt();
     let config_str = include_str!("./simple_config.yml");
     Figment::new()
-        .merge(Yaml::string(&config_str))
+        .merge(Yaml::string(config_str))
         .extract()
         .with_context(|| format!("Failed to parse test static config file: {config_str}"))
         .unwrap()

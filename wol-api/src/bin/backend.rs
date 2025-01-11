@@ -114,7 +114,8 @@ async fn main() -> anyhow::Result<()> {
             biased;
 
             v = config_changed.recv() => {
-                match cache_images_from_web(config.lock().unwrap().clone()).await {
+                let value = config.lock().unwrap().clone();
+                match cache_images_from_web(value).await {
                     Ok(cached_config) => *config.lock().unwrap() = cached_config,
                     Err(e) => log::error!("{}", e.context("Failed to cache images")),
                 };
