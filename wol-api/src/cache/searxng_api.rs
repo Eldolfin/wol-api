@@ -1,5 +1,4 @@
 use anyhow::Context as _;
-use log::debug;
 use serde::Deserialize;
 use serde::Serialize;
 

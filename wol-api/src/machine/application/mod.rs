@@ -1,6 +1,6 @@
-use anyhow::Context;
+use anyhow::Context as _;
 use futures_util::future::join_all;
-use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Pixel, Rgba};
+use image::{DynamicImage, GenericImageView as _, ImageBuffer, ImageReader, Pixel as _, Rgba};
 use itertools::Itertools as _;
 use log::warn;
 use serde::{Deserialize, Serialize};
@@ -51,7 +51,7 @@ impl ApplicationInfo {
             )]
             let size = ((icon_bytes.len() / 4) as f64).sqrt() as u32;
             let mut buf: ImageBuffer<Rgba<u8>, Vec<_>> = ImageBuffer::new(size, size);
-            buf.copy_from_slice(&icon_bytes);
+            buf.copy_from_slice(icon_bytes);
             Some(DynamicImage::from(buf))
         } else {
             None
@@ -198,7 +198,7 @@ impl TryInto<ApplicationInfo> for Application {
         let icon_name = self
             .icon()
             .map(|path| path.file_name().unwrap().to_str().unwrap().to_owned())
-            .unwrap_or_else(|| "no-icon".to_string());
+            .unwrap_or_else(|| "no-icon".to_owned());
 
         Ok(ApplicationInfo {
             name: name.to_owned(),
@@ -247,7 +247,7 @@ impl GroupedApplication {
         let groups = join_all(groups)
             .await
             .into_iter()
-            .filter_map(|x| x)
+            .flatten()
             .into_group_map();
         Self { groups }
     }

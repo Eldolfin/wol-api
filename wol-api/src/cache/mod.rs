@@ -7,7 +7,6 @@ use image::imageops::FilterType;
 use regex::Regex;
 use sha2::{Digest as _, Sha256};
 use std::{convert::Infallible, fs, path::Path};
-use tokio::io::AsyncWriteExt as _;
 use tokio::{fs::File, io::AsyncReadExt as _};
 use utoipa::OpenApi;
 use warp::{
