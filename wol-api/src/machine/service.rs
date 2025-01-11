@@ -7,6 +7,7 @@ use anyhow::Context as _;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::{
+    io,
     net::{SocketAddr, ToSocketAddrs as _},
     process,
     sync::{self, Arc},
@@ -208,8 +209,8 @@ impl Machine {
         })
     }
 
-    pub fn set_applications(&mut self, applications: Vec<ApplicationInfo>) {
-        self.applications = Some(applications.clone().into());
+    pub async fn set_applications(&mut self, applications: Vec<ApplicationInfo>) {
+        self.applications = Some(GroupedApplication::from_list(applications.clone()).await);
         self.applications_list = applications;
     }
 
@@ -234,7 +235,7 @@ impl Machine {
             .find(|app| app.name == application_name)
     }
 
-    async fn exec_desktop_cmd(&self, app_command: &str) -> Result<process::Output, std::io::Error> {
+    async fn exec_desktop_cmd(&self, app_command: &str) -> Result<process::Output, io::Error> {
         // TODO: unhardcode display
         self.ssh()
             .arg(format!("DISPLAY=:0 {app_command} >/dev/null 2>&1 & disown"))

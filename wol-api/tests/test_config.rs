@@ -9,9 +9,11 @@ use figment::{
     providers::{Format as _, Yaml},
     Figment,
 };
+use rstest::rstest;
 use tempfile::TempDir;
 use tokio::time::timeout;
 use wol_relay_server::config::{self, Config};
+use wol_relay_server::test::logfxt;
 
 fn test_config() -> Config {
     Figment::new()
@@ -21,8 +23,9 @@ fn test_config() -> Config {
         .unwrap()
 }
 
+#[rstest]
 #[tokio::test]
-async fn config_reload() -> Result<()> {
+async fn config_reload(logfxt: ()) -> Result<()> {
     const AUTO_RELOAD: bool = true;
 
     let dir = TempDir::new()?;

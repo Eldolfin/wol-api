@@ -1,5 +1,5 @@
 use anyhow::Context;
-mod icon;
+use futures_util::future::join_all;
 use image::{DynamicImage, GenericImageView, ImageBuffer, ImageReader, Pixel, Rgba};
 use itertools::Itertools as _;
 use log::warn;
@@ -7,13 +7,14 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     ffi::OsStr,
-    fs::{self, File},
-    io::{Error, Read as _},
+    fs,
+    io::Error,
     iter,
     path::{Path, PathBuf},
     str::FromStr as _,
 };
 use thiserror::Error;
+use tokio::{fs::File, io::AsyncReadExt as _};
 use utoipa::ToSchema;
 use xdgkit::{basedir, categories::Categories, desktop_entry::DesktopEntry, icon_finder};
 
@@ -29,21 +30,25 @@ pub struct Application {
 /// Serializable application
 pub struct ApplicationInfo {
     pub name: String,
-    icon_bytes: Vec<u8>,
+    icon_bytes: Option<Vec<u8>>,
     icon_name: String,
     pub exec: String,
     category: String,
 }
 impl ApplicationInfo {
-    fn icon(&self) -> image::DynamicImage {
-        #[expect(
-            clippy::cast_possible_truncation,
-            reason = "It won't be truncated because it's < 2^52 or something"
-        )]
-        let size = ((self.icon_bytes.len() / 4) as f64).sqrt() as u32;
-        let mut buf: ImageBuffer<Rgba<u8>, Vec<_>> = ImageBuffer::new(size, size);
-        buf.copy_from_slice(&self.icon_bytes);
-        DynamicImage::from(buf)
+    fn icon(&self) -> Option<image::DynamicImage> {
+        if let Some(icon_bytes) = &self.icon_bytes {
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "It won't be truncated because it's < 2^52 or something"
+            )]
+            let size = ((icon_bytes.len() / 4) as f64).sqrt() as u32;
+            let mut buf: ImageBuffer<Rgba<u8>, Vec<_>> = ImageBuffer::new(size, size);
+            buf.copy_from_slice(&icon_bytes);
+            Some(DynamicImage::from(buf))
+        } else {
+            None
+        }
     }
 
     fn icon_name(&self) -> &str {
@@ -68,9 +73,9 @@ pub struct GroupedApplication {
 }
 
 impl Application {
-    pub fn parse(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+    pub async fn parse(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let mut buf = String::new();
-        File::open(&path)?.read_to_string(&mut buf)?;
+        File::open(&path).await?.read_to_string(&mut buf).await?;
 
         let entry = DesktopEntry::read(buf);
         Ok(Self { entry })
@@ -98,15 +103,20 @@ impl Application {
     }
 }
 
-pub fn list_local_applications() -> anyhow::Result<Vec<Application>> {
-    basedir::applications()?
+pub async fn list_local_applications() -> anyhow::Result<Vec<Application>> {
+    let applications = basedir::applications()?;
+    let futures = applications
         .split(':')
         .flat_map(fs::read_dir)
         .flat_map(iter::IntoIterator::into_iter)
         .filter_map(|res| res.ok().map(|entry| entry.path()))
         .filter(|path| path.is_file() && path.extension() == Some(OsStr::new("desktop")))
-        .map(Application::parse)
-        .collect()
+        .map(|path| Application::parse(path));
+    Ok(join_all(futures)
+        .await
+        .into_iter()
+        .filter_map(Result::ok)
+        .collect())
 }
 
 #[expect(clippy::module_name_repetitions, reason = "more clear")]
@@ -159,23 +169,13 @@ impl TryInto<ApplicationInfo> for Application {
         };
         let category = category.to_owned();
 
-        let icon = ImageReader::open(self.icon().ok_or(ApplicationInfoError {
-            application: self.clone(),
-            kind: ApplicationInfoErrorKind::NoIcon,
-        })?)
-        .map_err(|err| ApplicationInfoError {
-            application: self.clone(),
-            kind: ApplicationInfoErrorKind::FailedToReadIcon(err),
-        })?
-        .decode()
-        .map_err(|err| ApplicationInfoError {
-            application: self.clone(),
-            kind: ApplicationInfoErrorKind::FailedToDecodeIcon(err),
-        })?;
-        let icon_bytes = icon
-            .pixels()
-            .flat_map(|(_, _, rgba)| rgba.channels().to_vec())
-            .collect_vec();
+        // nice 😐️
+        let icon_bytes =
+            (|| Some(ImageReader::open(self.icon()?).ok()?.decode().ok()?))().map(|icon| {
+                icon.pixels()
+                    .flat_map(|(_, _, rgba)| rgba.channels().to_vec())
+                    .collect_vec()
+            });
 
         #[expect(clippy::map_unwrap_or, reason = "unreachable :)")]
         let icon_name = self
@@ -193,13 +193,22 @@ impl TryInto<ApplicationInfo> for Application {
     }
 }
 
-impl TryFrom<ApplicationInfo> for ApplicationDisplay {
-    type Error = anyhow::Error;
-
-    fn try_from(value: ApplicationInfo) -> Result<Self, Self::Error> {
-        let icon = value.icon();
-        let icon = cache::cache_image(value.icon_name(), icon)
-            .with_context(|| format!("Error while trying to cache icon {}", value.icon_name()))?;
+impl ApplicationDisplay {
+    async fn try_from(value: ApplicationInfo) -> anyhow::Result<Self> {
+        let icon = if let Some(icon) = value.icon() {
+            cache::cache_image(value.icon_name(), icon).with_context(|| {
+                format!("Error while trying to cache icon {}", value.icon_name())
+            })?
+        } else {
+            cache::icon::cache_find_icon(&value.name)
+                .await
+                .with_context(|| {
+                    format!(
+                        "Failed to search an icon on the web for application `{}`",
+                        &value.name
+                    )
+                })?
+        };
         Ok(Self {
             name: value.name,
             icon,
@@ -207,18 +216,21 @@ impl TryFrom<ApplicationInfo> for ApplicationDisplay {
     }
 }
 
-impl From<Vec<ApplicationInfo>> for GroupedApplication {
-    fn from(value: Vec<ApplicationInfo>) -> Self {
-        let groups = value
+impl GroupedApplication {
+    pub async fn from_list(value: Vec<ApplicationInfo>) -> Self {
+        let groups = value.into_iter().map(|info| async {
+            Some((
+                info.category.clone(),
+                ApplicationDisplay::try_from(info)
+                    .await
+                    .inspect_err(|err| warn!("while processing applications: {:#}", err))
+                    .ok()?,
+            ))
+        });
+        let groups = join_all(groups)
+            .await
             .into_iter()
-            .filter_map(|info| {
-                Some((
-                    info.category.clone(),
-                    ApplicationDisplay::try_from(info)
-                        .inspect_err(|err| warn!("while processing applications: {:#}", err))
-                        .ok()?,
-                ))
-            })
+            .filter_map(|x| x)
             .into_group_map();
         Self { groups }
     }
