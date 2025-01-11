@@ -24,7 +24,10 @@ pub mod test {
     pub fn logfxt() {
         static ONCE: Once = Once::new();
         ONCE.call_once(|| {
-            env_logger::init();
+            env_logger::builder()
+                .format_timestamp(None)
+                .is_test(true)
+                .init();
         });
     }
 }

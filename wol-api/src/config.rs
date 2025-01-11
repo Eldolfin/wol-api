@@ -9,6 +9,8 @@ use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
+    fs::File,
+    io::Read as _,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
@@ -44,7 +46,7 @@ pub struct Config {
 #[serde(rename_all = "snake_case")]
 pub struct TaskCfg {
     #[schema(example = "[\"echo\", \"hello\", \"world\"]")]
-    #[serde(skip_serializing)]
+    // #[serde(skip_serializing)] // fails the tests
     pub command: Vec<String>,
     #[schema(
         example = "https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png"
@@ -62,7 +64,14 @@ pub fn open(
         let config = Figment::new()
             .merge(Yaml::file(path))
             .extract()
-            .with_context(|| format!("Failed to parse config file at {}", path.display()))?;
+            .with_context(|| {
+                debug!("Error config file content: {:#}", {
+                    let mut buf = String::new();
+                    File::open(path).unwrap().read_to_string(&mut buf).unwrap();
+                    buf
+                });
+                format!("Failed to parse config file at {}", path.display())
+            })?;
         debug!("config: {config:?}");
         Ok(config)
     }

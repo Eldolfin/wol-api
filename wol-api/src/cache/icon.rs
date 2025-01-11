@@ -126,7 +126,6 @@ fn calculate_icon_score(search_result: &SearchResult) -> f32 {
     // ****************************
     let search_engine_score = search_result.score * SEARCH_ENGINE_RANK_WEIGHT;
 
-    
     squariness_score + format_score + search_engine_score + resolution_matching_score
 }
 
