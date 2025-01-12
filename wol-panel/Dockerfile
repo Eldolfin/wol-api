@@ -1,8 +1,8 @@
 FROM node:23-alpine3.19 AS builder
 WORKDIR /app
-COPY yarn.lock package.json ./
+COPY package-lock.json package.json ./
 
-RUN yarn install
+RUN npm install
 
 COPY ./server ./server
 COPY ./public ./public
@@ -16,7 +16,7 @@ COPY                  \
   ./components.d.ts   \
   .
 
-RUN yarn run generate
+RUN npm run generate
 
 FROM caddy:2.9-alpine
 

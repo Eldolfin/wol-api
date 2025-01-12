@@ -1,10 +1,10 @@
 FROM node:23-alpine3.19
 WORKDIR /app/wol-panel
 
-COPY wol-panel/yarn.lock wol-panel/package.json ./
+COPY wol-panel/package-lock.json wol-panel/package.json ./
 
 COPY vdi/ /app/vdi/
 
-RUN yarn install
+RUN npm install
 
-CMD [ "yarn", "dev" ]
+CMD [ "npm", "run", "dev" ]
