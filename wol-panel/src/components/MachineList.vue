@@ -40,10 +40,7 @@ onMounted(() => {
       <template v-if="machines !== undefined" #header> Machines </template>
       <template v-if="machines !== undefined">
         <n-list-item v-for="i in machines!.length" :key="i">
-          <MachineCard
-            v-model:machine="machines![i - 1]"
-            :class="['wol-machine-card']"
-          />
+          <MachineCard v-model:machine="machines![i - 1]" />
         </n-list-item>
       </template>
       <template v-else-if="errored">
@@ -56,7 +53,7 @@ onMounted(() => {
         </n-result>
       </template>
       <template v-else>
-        <n-list-item v-for="i in 2">
+        <n-list-item v-for="i in 2" :key="i">
           <n-skeleton height="243px" width="700px" />
         </n-list-item>
       </template>

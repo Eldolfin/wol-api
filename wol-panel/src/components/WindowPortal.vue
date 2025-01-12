@@ -38,40 +38,23 @@ function openPortal() {
   );
   windowRef.value!.addEventListener("beforeunload", closePortal);
 
-  //windowRef.value!.addEventListener("load", () => {
-  windowLoaded.value = true;
-
-  // Clear any existing content
-  windowRef.value!.document.body.innerHTML = "";
-
-  windowRef.value!.document.title = document.title;
-
-  // Move the component into the window
-  const app = document.createElement("div");
-  app.id = "app";
-  app.appendChild(childRef.value!);
-  windowRef.value!.document.body.appendChild(app);
-  // $emit("update:open", true);
-  // $emit("opened", windowRef);
-
-  // Clone style nodes
-  //    if (!noStyle) {
-  //      for (const el of document.head.querySelectorAll(
-  //        "style, link[rel=stylesheet]",
-  //      )) {
-  //        const clone = el.cloneNode(true);
-  //        windowRef.document.head.appendChild(clone);
-  //      }
-  //    }
-  //});
+  nextTick(() => {
+    windowLoaded.value = true;
+    // Clear any existing content
+    windowRef.value!.document.body.innerHTML = "";
+    windowRef.value!.document.title = document.title;
+    // Move the component into the window
+    const app = document.createElement("div");
+    app.id = "app";
+    app.appendChild(childRef.value!);
+    windowRef.value!.document.body.appendChild(app);
+  });
 }
 function closePortal() {
-  if (!windowRef) return;
+  if (!windowRef.value) return;
 
   windowLoaded.value = false;
   windowRef.value?.close();
   windowRef.value = null;
-  // $emit("update:open", false);
-  // $emit("closed");
 }
 </script>

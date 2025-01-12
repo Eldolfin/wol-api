@@ -3,10 +3,10 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y entr
 
-COPY yarn.lock package.json ./
+COPY package-lock.json package.json ./
 
-RUN yarn install
+RUN npm install
 ENV DOCKER_TEST=1
 ENV PLAYWRIGHT_HTML_HOST=0.0.0.0
 
-CMD ["sh", "-c", "find src/ tests/ | entr -ncr yarn run playwright"]
+CMD ["sh", "-c", "find src/ tests/ | entr -ncr npm run playwright"]
