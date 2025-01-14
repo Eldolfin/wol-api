@@ -1,10 +1,11 @@
 FROM node:23-alpine3.19
 WORKDIR /app/wol-panel
 
+RUN apk add entr
 COPY wol-panel/package-lock.json wol-panel/package.json ./
 
 COPY vdi/ /app/vdi/
 
 RUN npm install
 
-CMD [ "npm", "run", "dev" ]
+CMD [ "sh", "-c", "echo package.json | entr -ncr sh -c 'npm install && npm run dev'"]

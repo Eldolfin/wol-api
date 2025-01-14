@@ -24,7 +24,19 @@ export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: true },
   compatibilityDate: "2024-11-01",
+  nitro: {
+    esbuild: {
+      options: {
+        target: "esnext",
+      },
+    },
+  },
   vite: {
+    optimizeDeps: {
+      esbuildOptions: {
+        target: "esnext",
+      },
+    },
     plugins: [
       AutoImport({
         imports: [

@@ -1,7 +1,0 @@
-/Dockerfile
-/.dockerignore
-/.direnv/
-/node_modules/
-/.nuxt
-/.output
-/dist
