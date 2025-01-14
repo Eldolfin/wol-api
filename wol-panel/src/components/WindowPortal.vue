@@ -36,9 +36,11 @@ function openPortal() {
   windowRef.value!.document.body.appendChild(
     windowRef.value!.document.createElement("div"),
   );
+  windowRef.value!.addEventListener("unload", closePortal);
   windowRef.value!.addEventListener("beforeunload", closePortal);
 
   nextTick(() => {
+    if (!windowRef.value || !childRef.value) return;
     windowLoaded.value = true;
     // Clear any existing content
     windowRef.value!.document.body.innerHTML = "";
@@ -48,13 +50,23 @@ function openPortal() {
     app.id = "app";
     app.appendChild(childRef.value!);
     windowRef.value!.document.body.appendChild(app);
+
+    // copy style
+    for (const el of document.head.querySelectorAll(
+      "style, link[rel=stylesheet]",
+    )) {
+      const clone = el.cloneNode(true);
+      windowRef.value!.document.head.appendChild(clone);
+    }
   });
 }
 function closePortal() {
+  console.log("closePortal", windowRef.value);
   if (!windowRef.value) return;
 
   windowLoaded.value = false;
   windowRef.value?.close();
   windowRef.value = null;
+  open.value = false;
 }
 </script>

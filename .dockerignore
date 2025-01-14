@@ -1,0 +1,14 @@
+Dockerfile
+.dockerignore
+.direnv/
+node_modules/
+.nuxt
+.output
+dist
+target/
+.git/
+benches
+vdi/result
+vdi/telemetry
+vdi/misc
+wol-panel/.devenv/

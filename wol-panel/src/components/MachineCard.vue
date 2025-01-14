@@ -147,7 +147,7 @@ const serverCertificateHash = new Uint8Array([
 provideSanzuState();
 </script>
 <template>
-  <WindowPortal :open="sanzuOpened">
+  <WindowPortal v-model:open="sanzuOpened">
     <v-theme-provider with-background>
       <v-app>
         <v-main>
@@ -156,7 +156,7 @@ provideSanzuState();
             :serverCertificateHash="serverCertificateHash"
           />
           <SanzuMenu />
-          <!-- <SanzuStats /> -->
+          <SanzuStats />
         </v-main>
       </v-app>
     </v-theme-provider>
