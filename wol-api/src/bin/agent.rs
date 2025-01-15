@@ -1,8 +1,14 @@
 use anyhow::anyhow;
 use anyhow::Context as _;
 use clap::Parser;
+use figment::providers::Yaml;
+use figment::{providers::Format as _, Figment};
 use log::{debug, info, warn};
 use rayon::prelude::*;
+use serde::Deserialize;
+use std::fs::File;
+use std::io::Read as _;
+use std::path::PathBuf;
 use std::thread::sleep;
 use std::time::Duration;
 use tungstenite::connect;
@@ -17,12 +23,20 @@ const RETRIES_INTERVAL: Duration = Duration::from_secs(1);
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
 struct Args {
-    /// machine name defined in the backend config eg: <oscar-tour>
+    /// Path to the config file
     #[arg()]
+    config: PathBuf,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+struct Config {
+    /// machine name defined in the backend config eg: <oscar-tour>
     machine_name: String,
     /// backend agent-websocket ip address or domain name eg: <ws://192.168.1.1:3000>
-    #[arg()]
     domain: String,
+    /// Shell command to run to start the vdi
+    start_vdi_cmd: String,
 }
 
 #[tokio::main]
@@ -30,9 +44,28 @@ async fn main() -> anyhow::Result<()> {
     env_logger::init();
 
     let Args {
-        domain,
-        machine_name,
+        config: config_path,
     } = Args::parse();
+    let Config {
+        machine_name,
+        domain,
+        start_vdi_cmd,
+    } = Figment::new()
+        .merge(Yaml::file(&config_path))
+        .extract()
+        .with_context(|| {
+            debug!("Error config file content: {:#}", {
+                let mut buf = String::new();
+                File::open(&config_path)
+                    .unwrap()
+                    .read_to_string(&mut buf)
+                    .unwrap();
+                buf
+            });
+            format!("Failed to parse config file at {}", config_path.display())
+        })?;
+    debug!("config: {config_path:?}");
+
     let domain = format!("{domain}/api/machine/agent");
 
     info!("Listing applications...");
