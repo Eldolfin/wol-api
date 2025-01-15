@@ -139,7 +139,8 @@ function handleOpenTerminal() {
 function handleOpenVdi() {
   sanzuOpened.value = true;
 }
-const serverURL = "https://127.0.0.1:1122";
+const webtransportURL = "https://127.0.0.1:1122";
+const websocketURL = "ws://127.0.0.1:1123";
 const serverCertificateHash = new Uint8Array([
   62, 254, 188, 32, 121, 169, 163, 188, 223, 159, 214, 60, 230, 110, 134, 148,
   173, 250, 93, 53, 92, 183, 129, 43, 85, 111, 83, 149, 23, 13, 190, 233,
@@ -152,7 +153,8 @@ provideSanzuState();
       <v-app>
         <v-main>
           <Sanzu
-            :serverURL="serverURL"
+            :webtransport-url="webtransportURL"
+            :websocket-url="websocketURL"
             :serverCertificateHash="serverCertificateHash"
           />
           <SanzuMenu />

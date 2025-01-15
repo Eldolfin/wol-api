@@ -6,6 +6,15 @@
 </template>
 
 <script setup lang="ts">
+import {
+  defineModel,
+  watch,
+  onMounted,
+  onUnmounted,
+  ref,
+  useTemplateRef,
+  nextTick,
+} from "vue";
 const open = defineModel<boolean>("open", {
   required: true,
 });
@@ -17,9 +26,9 @@ watch([open], (newOpen) => {
   }
 });
 onMounted(() => {
-  if (open.value) {
-    openPortal();
-  }
+  //if (open.value) {
+  //openPortal();
+  //}
   window.addEventListener("beforeunload", closePortal);
 });
 onUnmounted(() => {
@@ -36,7 +45,7 @@ function openPortal() {
   windowRef.value!.document.body.appendChild(
     windowRef.value!.document.createElement("div"),
   );
-  windowRef.value!.addEventListener("unload", closePortal);
+  // windowRef.value!.addEventListener("unload", closePortal);
   windowRef.value!.addEventListener("beforeunload", closePortal);
 
   nextTick(() => {
@@ -61,12 +70,12 @@ function openPortal() {
   });
 }
 function closePortal() {
-  console.log("closePortal", windowRef.value);
   if (!windowRef.value) return;
 
+  windowRef.value!.close();
   windowLoaded.value = false;
-  windowRef.value?.close();
-  windowRef.value = null;
   open.value = false;
+  // otherwise it wouldn't close for some weird reason
+  setTimeout(() => (windowRef.value = null), 1);
 }
 </script>
