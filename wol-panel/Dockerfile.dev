@@ -8,4 +8,4 @@ COPY vdi/ /app/vdi/
 
 RUN npm install
 
-CMD [ "sh", "-c", "echo package.json | entr -ncr sh -c 'npm install && npm run dev'"]
+CMD [ "sh", "-c", "echo package.json package-lock.json | entr -ncr sh -c 'npm install && npm run dev'"]
