@@ -21,7 +21,7 @@ lint:
     cargo clippy
 
 watch-agent:
-    @just watch --bin agent -- reel ws://localhost:3030
+    @just watch --bin agent -- -- tests/agent-config.yml
 
 watch-backend:
     @just watch --bin backend -- -c ../dev/wol-config.yml
