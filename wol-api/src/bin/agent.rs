@@ -1,19 +1,24 @@
-use anyhow::anyhow;
-use anyhow::Context as _;
+use anyhow::{anyhow, Context as _};
 use clap::Parser;
-use figment::providers::Yaml;
-use figment::{providers::Format as _, Figment};
-use log::{debug, info, warn};
+use figment::{
+    providers::{Format as _, Yaml},
+    Figment,
+};
+use log::{debug, error, info, warn};
 use rayon::prelude::*;
 use serde::Deserialize;
-use std::fs::File;
-use std::io::Read as _;
-use std::path::PathBuf;
-use std::thread::sleep;
-use std::time::Duration;
-use tungstenite::connect;
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::PathBuf,
+    sync::{Arc, Mutex},
+    thread::sleep,
+    time::Duration,
+};
+use tokio::process::Command;
+use tungstenite::{connect, Message, WebSocket};
 use wol_relay_server::{
-    agent::messages::AgentHello,
+    agent::messages::{AgentHello, AgentMessage, ServerMessage},
     machine::application::{list_local_applications, Application, ApplicationInfo},
 };
 
@@ -111,22 +116,54 @@ async fn main() -> anyhow::Result<()> {
     info!("Connected to the server");
     debug!("Response HTTP code: {}", response.status());
 
-    let hello = AgentHello {
+    let hello = AgentMessage::Hello(AgentHello {
         machine_name,
         applications,
-    };
-    socket
-        .send(tungstenite::Message::text(serde_json::to_string(&hello)?))
-        .context("Failed to send message")?;
+    });
+    send_message(&mut socket, &hello)?;
 
-    // loop {
-    //     let msg = socket
-    //         .read()
-    //         .context("Failed to read message from backend socket")?;
-    //     println!("Received: {msg}");
-    // }
+    let socket = Arc::new(Mutex::new(socket));
+    loop {
+        let msg = socket
+            .lock()
+            .unwrap()
+            .read()
+            .context("Failed to read message from backend socket")?;
+        let msg: ServerMessage = serde_json::from_str(msg.into_text().unwrap().as_str())
+            .context("Expected server to send correct json messages")?;
+        match msg {
+            ServerMessage::OpenVdi => {
+                let start_vdi_cmd = start_vdi_cmd.clone();
+                let socket = socket.clone();
+                tokio::spawn(async move {
+                    _ = open_vdi(&start_vdi_cmd)
+                        .await
+                        .with_context(|| format!("Failed to open vdi (cmd = {:#})", &start_vdi_cmd))
+                        .inspect_err(|err| error!("TODO: report vdi error to backend: {:#}", err));
+                    send_message(&mut socket.lock().unwrap(), &AgentMessage::VdiClosed).unwrap();
+                });
+            }
+        }
+    }
+    // info!("Agent is done. Exiting");
+    // Ok(())
+}
 
-    info!("Agent is done. Exiting");
+fn send_message<Stream>(ws: &mut WebSocket<Stream>, msg: &AgentMessage) -> anyhow::Result<()>
+where
+    Stream: Read + Write,
+{
+    ws.send(Message::Text(serde_json::to_string(msg)?.into()))
+        .context("Could not send message to backend")
+}
 
+async fn open_vdi(start_vdi_cmd: &str) -> anyhow::Result<()> {
+    let mut child = Command::new("sh")
+        .arg("-c")
+        .arg(start_vdi_cmd)
+        .spawn()
+        .context("Failed to spawn command")?;
+    let output = child.wait().await.context("vdi command failed")?;
+    debug!("vdi command exited with {:?}", output);
     Ok(())
 }

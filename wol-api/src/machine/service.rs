@@ -1,9 +1,11 @@
 use super::{
+    api::responses::{AgentComunicationError, OpenVdiError},
     application::{ApplicationInfo, GroupedApplication},
     wol,
 };
-use crate::config;
+use crate::{agent::messages::ServerMessage, config};
 use anyhow::Context as _;
+use futures_util::SinkExt as _;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -15,25 +17,25 @@ use std::{
 };
 use tokio::{process::Command, sync::Mutex};
 use utoipa::ToSchema;
+use warp::filters::ws::{Message, WebSocket};
 
 pub type Store = sync::Arc<Mutex<StoreInner>>;
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct StoreInner {
-    machines: Vec<Machine>,
+    pub machines: Vec<Machine>,
 }
 
 impl StoreInner {
-    pub fn by_name(&self, name: &str) -> Option<Machine> {
+    pub fn by_name(&self, name: &str) -> Option<&Machine> {
         self.machines
             .iter()
-            .find(|machine| machine.name == name)
-            .cloned()
+            .find(|machine| machine.infos.name == name)
     }
     pub fn by_name_mut(&mut self, name: &str) -> Option<&mut Machine> {
         self.machines
             .iter_mut()
-            .find(|machine| machine.name == name)
+            .find(|machine| machine.infos.name == name)
     }
 
     pub fn new(config: &config::Config) -> anyhow::Result<Self> {
@@ -56,18 +58,26 @@ impl StoreInner {
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub struct Machine {
+pub struct MachineInfos {
     #[schema(example = "computer1")]
     pub name: String,
     pub state: State,
     pub tasks: Vec<Task>,
+    pub vdi_opened: bool,
     pub config: config::MachineCfg,
-    #[serde(skip_serializing)]
-    pub addr: SocketAddr,
     pub applications: Option<GroupedApplication>,
-    #[serde(skip)]
-    applications_list: Vec<ApplicationInfo>,
 }
+
+#[derive(Debug)]
+pub struct Machine {
+    pub infos: MachineInfos,
+    pub addr: SocketAddr,
+    applications_list: Vec<ApplicationInfo>,
+    connection: Option<WebSocket>,
+}
+
+/// SAFETY: its fine :)
+unsafe impl Sync for Machine {}
 
 impl Machine {
     pub async fn update_state(&mut self) {
@@ -80,7 +90,7 @@ impl Machine {
         .await
         .is_ok();
 
-        if !(ping_res && self.state == State::On) {
+        if !(ping_res && self.infos.state == State::On) {
             let res = ping_res
                 && self
                     .ssh()
@@ -89,10 +99,10 @@ impl Machine {
                     .await
                     .map(|res| res.status.success())
                     .is_ok();
-            self.state = Self::next_state(res, ping_res, self.state);
+            self.infos.state = Self::next_state(res, ping_res, self.infos.state);
         }
 
-        if self.state == State::On {
+        if self.infos.state == State::On {
             self.flush_tasks().await;
         }
     }
@@ -119,13 +129,23 @@ impl Machine {
         cmd
     }
 
+    pub async fn open_vdi(&mut self) -> Result<(), OpenVdiError> {
+        if self.infos.vdi_opened {
+            return Err(OpenVdiError::AlreadyOpened);
+        }
+        self.send_message(&ServerMessage::OpenVdi)
+            .await
+            .map_err(OpenVdiError::AgentComunicationError)?;
+        self.infos.vdi_opened = true;
+        Ok(())
+    }
     pub async fn shutdown(&mut self, dry_run: bool) -> String {
-        self.state = State::PendingOff;
+        self.infos.state = State::PendingOff;
         let mut cmd = self.ssh();
         cmd.arg("sudo")
             // .arg("systemctl").arg("poweroff")
             .arg("poweroff");
-        info!("Shutting down machine '{}'", self.name);
+        info!("Shutting down machine '{}'", self.infos.name);
         debug!(
             "Running command: {:?}{}",
             &cmd,
@@ -144,12 +164,12 @@ impl Machine {
     pub fn wake(&mut self, dry_run: bool) -> Result<String, String> {
         info!(
             "Sending wake on lan to {} (mac = {})",
-            self.name,
-            self.config.mac.to_uppercase()
+            self.infos.name,
+            self.infos.config.mac.to_uppercase()
         );
-        self.state = State::PendingOn;
+        self.infos.state = State::PendingOn;
 
-        let send = wol::send(&self.config.mac, dry_run);
+        let send = wol::send(&self.infos.config.mac, dry_run);
         match send {
             Ok(()) => Ok("Sent wake on lan successfully".to_owned()),
             Err(e) => Err(e.to_string()),
@@ -157,18 +177,18 @@ impl Machine {
     }
 
     pub fn push_task(&mut self, task: Task, dry_run: bool) -> Result<String, String> {
-        if task.id >= self.config.tasks.len() {
+        if task.id >= self.infos.config.tasks.len() {
             return Err(format!(
                 "Task id {} is out of bound for machine {} which has {} tasks",
                 task.id,
-                self.name,
-                self.tasks.len()
+                self.infos.name,
+                self.infos.tasks.len()
             ));
         }
-        let name = self.config.tasks[task.id].name.clone();
-        debug!("Pushing task {}, to {}", name, self.name);
-        self.tasks.push(task);
-        if self.state == State::Off {
+        let name = self.infos.config.tasks[task.id].name.clone();
+        debug!("Pushing task {}, to {}", name, self.infos.name);
+        self.infos.tasks.push(task);
+        if self.infos.state == State::Off {
             let res = self.wake(dry_run)?;
             debug!("Push task: wake on lan result: {res}");
         }
@@ -181,7 +201,7 @@ impl Machine {
             reason = "TODO: send them to front and do a popup"
         )]
         let mut errors = Vec::new(); // TODO: report them somehow
-        while let Some(task) = self.tasks.pop() {
+        while let Some(task) = self.infos.tasks.pop() {
             let res = task
                 .execute(self)
                 .await
@@ -194,24 +214,32 @@ impl Machine {
 
     fn new(config: &config::MachineCfg, name: &str) -> anyhow::Result<Self> {
         Ok(Self {
-            config: config.to_owned(),
-            name: name.to_owned(),
+            infos: MachineInfos {
+                config: config.to_owned(),
+                name: name.to_owned(),
+                state: State::default(),
+                tasks: vec![],
+                applications: None,
+                vdi_opened: false,
+            },
             addr: config
                 .ip
                 .to_socket_addrs()
                 .with_context(|| format!("Could not parse '{name}' ip"))?
                 .next()
                 .context("Error while resolving '{name}' ip")?,
-            state: State::default(),
-            tasks: Vec::new(),
-            applications: None,
             applications_list: vec![],
+            connection: None,
         })
     }
 
     pub async fn set_applications(&mut self, applications: Vec<ApplicationInfo>) {
-        self.applications = Some(GroupedApplication::from_list(applications.clone()).await);
+        self.infos.applications = Some(GroupedApplication::from_list(applications.clone()).await);
         self.applications_list = applications;
+    }
+
+    pub fn set_connection(&mut self, connection: WebSocket) {
+        self.connection = Some(connection);
     }
 
     pub async fn open_app(&self, application_name: &str, dry_run: bool) -> anyhow::Result<()> {
@@ -241,6 +269,20 @@ impl Machine {
             .arg(format!("DISPLAY=:0 {app_command} >/dev/null 2>&1 & disown"))
             .output()
             .await
+    }
+
+    async fn send_message(&mut self, msg: &ServerMessage) -> Result<(), AgentComunicationError> {
+        let Some(connection) = &mut self.connection else {
+            return Err(AgentComunicationError::NotConnected);
+        };
+        let message = Message::text(serde_json::to_string(msg).unwrap());
+        connection
+            .send(message)
+            .await
+            .with_context(|| format!("Could not send message {msg:?} to {}", self.infos.name))
+            .map_err(|err| format!("{err:#}"))
+            .map_err(AgentComunicationError::SendFailed)?;
+        Ok(())
     }
 }
 
@@ -278,7 +320,7 @@ impl Task {
     async fn execute(&self, on: &Machine) -> anyhow::Result<()> {
         let res = on
             .ssh()
-            .args(&on.config.tasks[self.id].command)
+            .args(&on.infos.config.tasks[self.id].command)
             .output()
             .await?;
         if !res.status.success() {
