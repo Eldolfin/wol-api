@@ -103,7 +103,12 @@ async fn connect(
     };
     let config = Arc::new(client::Config::default());
     let sh = Client {};
-    let Some(machine) = store.lock().await.by_name(machine_name) else {
+    let Some(machine) = store
+        .lock()
+        .await
+        .by_name(machine_name)
+        .map(|machine| machine.infos.clone())
+    else {
         tx.send(websocket_error(format!(
             "Machine {machine_name} does not exist"
         )))

@@ -1,10 +1,12 @@
+pub mod responses;
 use super::service::{State, Store, StoreInner, Task};
 use crate::{
-    agent::messages::AgentHello,
+    agent::messages::{AgentHello, AgentMessage},
     config::Config,
     consts::{MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
     machine::ssh,
 };
+use responses::{ListMachineResponse, OpenVdiError};
 use urlencoding;
 
 use core::convert::Infallible;
@@ -25,7 +27,7 @@ use warp::{
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(list, wake, shutdown, task, list_ws, agent, open_application),
+    paths(list, wake, shutdown,open_vdi, task, list_ws, agent, open_application),
     nest(
         (path = "/ssh", api = ssh::api::Api)
     ),
@@ -36,31 +38,32 @@ pub struct Api;
     get,
     path = "/list",
     responses(
-        (status = 200, description = "List machines successfully", body = StoreInner)
+        (status = 200, description = "List machines successfully", body = ListMachineResponse)
     )
 )]
 pub async fn list(store: Store) -> Result<Box<dyn Reply>, Infallible> {
     let machines = store.lock().await;
-    Ok(Box::new(reply::json(&machines.clone())))
+    Ok(Box::new(reply::json(&ListMachineResponse::from(
+        &machines.machines,
+    ))))
 }
 
 #[utoipa::path(
     get,
     path = "/list_ws",
     responses(
-        (status = 101, description = "Switching protocol to websocket", body = StoreInner)
+        (status = 101, description = "Switching protocol to websocket", body = ListMachineResponse)
     )
 )]
 pub async fn list_ws(store: Store, websocket: WebSocket) {
     let (mut tx, _rx) = websocket.split();
     let mut last_machines_states = None;
     loop {
-        let machines = store.lock().await.to_owned();
-        if Some(machines.clone()) != last_machines_states {
-            last_machines_states = Some(machines.clone());
-            let res = tx
-                .send(Message::text(serde_json::to_string(&machines).unwrap()))
-                .await;
+        let machines = ListMachineResponse::from(&store.lock().await.machines);
+        if Some(&machines) != last_machines_states.as_ref() {
+            let to_string = serde_json::to_string(&machines).unwrap();
+            last_machines_states = Some(machines);
+            let res = tx.send(Message::text(to_string)).await;
             match res {
                 Ok(_) => (),
                 Err(e) => {
@@ -77,12 +80,11 @@ pub async fn list_ws(store: Store, websocket: WebSocket) {
     get,
     path = "/agent",
     responses(
-        (status = 101, description = "Switching protocol to websocket", body = StoreInner)
+        (status = 101, description = "Switching protocol to websocket")
     )
 )]
-pub async fn agent(store: Store, websocket: WebSocket) {
-    let (_tx, mut rx) = websocket.split();
-    let agent_hello_msg = match rx.next().await {
+pub async fn agent(store: Store, mut websocket: WebSocket) {
+    let agent_hello_msg = match websocket.next().await {
         Some(Ok(msg)) => msg,
         Some(Err(err)) => {
             error!("Failed to received agent hello: {:#}", err);
@@ -97,10 +99,20 @@ pub async fn agent(store: Store, websocket: WebSocket) {
         error!("Agent sent a message that was not a string");
         return;
     };
-    let agent_hello: AgentHello = match serde_json::from_str(msg_str) {
+    let agent_hello: AgentMessage = match serde_json::from_str(msg_str) {
         Ok(hello) => hello,
         Err(err) => {
             error!("Agent sent an incorrect formatted hello message: {:#}", err);
+            return;
+        }
+    };
+    let agent_hello = match agent_hello {
+        AgentMessage::Hello(agent_hello) => agent_hello,
+        msg => {
+            error!(
+                "Agent didn't send a hello as a first message, he sent {:?} instead",
+                msg
+            );
             return;
         }
     };
@@ -108,9 +120,10 @@ pub async fn agent(store: Store, websocket: WebSocket) {
     let mut lock = store.lock().await;
     if let Some(machine) = lock.by_name_mut(&agent_hello.machine_name) {
         machine.set_applications(agent_hello.applications).await;
+        machine.set_connection(websocket);
         debug!(
             "Machine `{}` successfully sent its list of applications",
-            machine.name
+            machine.infos.name
         );
     } else {
         error!(
@@ -145,6 +158,38 @@ pub async fn shutdown(store: Store, name: String, dry_run: bool) -> Result<impl 
         machine.shutdown(dry_run).await,
         StatusCode::OK,
     ))
+}
+
+#[utoipa::path(
+    post,
+    path = "/{name}/open_vdi",
+    responses(
+        // TODO: send serverCertificateHash as a response
+        (status = 200, description = "Opened the vdi successfully"),
+        (status = 404, description = "Machine does not exist"),
+        (status = 500, description = "Failed to open vdi", body = OpenVdiError)
+    ),
+    params(
+        ("name" = String, Path, description = "Name of the machine on which to open the vdi")
+    ),
+)]
+#[expect(clippy::significant_drop_tightening, reason = "todo fix mais flemme")]
+pub async fn open_vdi(store: Store, name: String) -> Result<impl Reply, Infallible> {
+    let mut lock = store.lock().await;
+    let Some(machine) = lock.by_name_mut(&name) else {
+        return Ok(reply::with_status(
+            "Machine does not exist".to_owned(),
+            http::StatusCode::NOT_FOUND,
+        ));
+    };
+
+    match machine.open_vdi().await {
+        Ok(()) => Ok(reply::with_status("Success".to_owned(), StatusCode::OK)),
+        Err(err) => Ok(reply::with_status(
+            serde_json::to_string(&err).unwrap(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        )),
+    }
 }
 
 #[utoipa::path(
@@ -239,8 +284,8 @@ pub async fn wake(store: Store, name: String, dry_run: bool) -> Result<Box<dyn R
             time::sleep(TIME_BEFORE_ASSUMING_WOL_FAILED).await;
             let mut lock = store.lock().await;
             let machine = lock.by_name_mut(&name).unwrap();
-            if machine.state == State::PendingOn {
-                machine.state = State::Off;
+            if machine.infos.state == State::PendingOn {
+                machine.infos.state = State::Off;
             }
         });
     }
@@ -303,6 +348,10 @@ pub fn handlers(
         warp::path!(String / "shutdown")
             .and_then(move |name: String| shutdown(store.clone(), name, dry_run))
     };
+    let open_vdi = {
+        let store = store.clone();
+        warp::path!(String / "open_vdi").and_then(move |name: String| open_vdi(store.clone(), name))
+    };
     let task = {
         let store = store.clone();
         warp::path!(String / "task")
@@ -331,6 +380,7 @@ pub fn handlers(
     let routes = list
         .or(wake)
         .or(shutdown)
+        .or(open_vdi)
         .or(task)
         .or(list_ws)
         .or(ssh_handlers)
