@@ -1,7 +1,7 @@
 pub mod responses;
-use super::service::{State, Store, StoreInner, Task};
+use super::service::{State, Store, Task};
 use crate::{
-    agent::messages::{AgentHello, AgentMessage},
+    agent::messages::AgentMessage,
     config::Config,
     consts::{MACHINE_REFRESH_INTERVAL, SEND_STATE_INTERVAL, TIME_BEFORE_ASSUMING_WOL_FAILED},
     machine::ssh,

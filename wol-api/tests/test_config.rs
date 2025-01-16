@@ -13,7 +13,7 @@ use rstest::{fixture, rstest};
 use tempfile::TempDir;
 use tokio::time::timeout;
 use wol_relay_server::config::{self, Config};
-use wol_relay_server::test::{self};
+use wol_relay_server::test;
 
 #[fixture]
 fn test_config() -> Config {
