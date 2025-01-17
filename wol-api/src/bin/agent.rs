@@ -4,19 +4,16 @@ use figment::{
     providers::{Format as _, Yaml},
     Figment,
 };
+use futures_util::{stream::SplitSink, SinkExt as _, StreamExt as _};
 use log::{debug, error, info, warn};
 use rayon::prelude::*;
 use serde::Deserialize;
-use std::{
-    fs::File,
-    io::{Read, Write},
-    path::PathBuf,
-    sync::{Arc, Mutex},
-    thread::sleep,
-    time::Duration,
-};
+use std::{fs::File, io::Read as _, path::PathBuf, sync::Arc, thread::sleep, time::Duration};
 use tokio::process::Command;
-use tungstenite::{connect, Message, WebSocket};
+use tokio::{net::TcpStream, sync::Mutex};
+use tokio_tungstenite::{
+    connect_async, tungstenite::protocol::Message, MaybeTlsStream, WebSocketStream,
+};
 use wol_relay_server::{
     agent::messages::{AgentHello, AgentMessage, ServerMessage},
     machine::application::{list_local_applications, Application, ApplicationInfo},
@@ -97,7 +94,8 @@ async fn main() -> anyhow::Result<()> {
     info!("Connecting to backend at {}", &domain);
     for i in 0..MAX_RETRIES {
         debug!("Try #{}/{}", i, MAX_RETRIES);
-        match connect(&domain)
+        match connect_async(&domain)
+            .await
             .with_context(|| format!("Could not connect to backend server at {domain}"))
         {
             Ok(ok) => {
@@ -111,7 +109,10 @@ async fn main() -> anyhow::Result<()> {
             }
         }
     }
-    let (mut socket, response) = res?;
+    let (socket, response) = res?;
+    let (sock_send, sock_recv) = socket.split();
+    let sock_send = Arc::new(Mutex::new(sock_send));
+    let sock_recv = Arc::new(Mutex::new(sock_recv));
 
     info!("Connected to the server");
     debug!("Response HTTP code: {}", response.status());
@@ -120,27 +121,36 @@ async fn main() -> anyhow::Result<()> {
         machine_name,
         applications,
     });
-    send_message(&mut socket, &hello)?;
+    send_message(&sock_send, &hello).await?;
 
-    let socket = Arc::new(Mutex::new(socket));
     loop {
-        let msg = socket
-            .lock()
-            .unwrap()
-            .read()
+        let mut lock = sock_recv.lock().await;
+        let msg = lock
+            .next()
+            .await
+            .context("Failed to read message from backend socket")?
             .context("Failed to read message from backend socket")?;
+        drop(lock);
         let msg: ServerMessage = serde_json::from_str(msg.into_text().unwrap().as_str())
             .context("Expected server to send correct json messages")?;
         match msg {
+            // fun fact: we don't even check that the vdi is not already opened
+            // we trust the backend to know this for us otherwise we would open
+            // multiple sanzu server
             ServerMessage::OpenVdi => {
                 let start_vdi_cmd = start_vdi_cmd.clone();
-                let socket = socket.clone();
+                let socket = sock_send.clone();
                 tokio::spawn(async move {
-                    _ = open_vdi(&start_vdi_cmd)
+                    if let Err(err) = open_vdi(&start_vdi_cmd)
                         .await
                         .with_context(|| format!("Failed to open vdi (cmd = {:#})", &start_vdi_cmd))
-                        .inspect_err(|err| error!("TODO: report vdi error to backend: {:#}", err));
-                    send_message(&mut socket.lock().unwrap(), &AgentMessage::VdiClosed).unwrap();
+                    {
+                        error!("TODO: report vdi error to backend: {:#}", err);
+                    }
+                    let res = send_message(&socket, &AgentMessage::VdiClosed).await;
+                    if let Err(err) = res {
+                        error!("Couldn't send vdi closed to backend: {:#}", err);
+                    }
                 });
             }
         }
@@ -149,11 +159,13 @@ async fn main() -> anyhow::Result<()> {
     // Ok(())
 }
 
-fn send_message<Stream>(ws: &mut WebSocket<Stream>, msg: &AgentMessage) -> anyhow::Result<()>
-where
-    Stream: Read + Write,
-{
-    ws.send(Message::Text(serde_json::to_string(msg)?.into()))
+type Omg = Arc<Mutex<SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>>>;
+async fn send_message(ws: &Omg, msg: &AgentMessage) -> anyhow::Result<()> {
+    debug!("Sending msg to backend");
+    ws.lock()
+        .await
+        .send(Message::Text(serde_json::to_string(msg)?))
+        .await
         .context("Could not send message to backend")
 }
 
