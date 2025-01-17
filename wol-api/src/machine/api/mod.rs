@@ -1,5 +1,5 @@
 pub mod responses;
-use super::service::{State, Store, Task};
+use super::service::{recv_agent_msg, State, Store, Task};
 use crate::{
     agent::messages::AgentMessage,
     config::Config,
@@ -84,25 +84,10 @@ pub async fn list_ws(store: Store, websocket: WebSocket) {
     )
 )]
 pub async fn agent(store: Store, mut websocket: WebSocket) {
-    let agent_hello_msg = match websocket.next().await {
-        Some(Ok(msg)) => msg,
-        Some(Err(err)) => {
-            error!("Failed to received agent hello: {:#}", err);
-            return;
-        }
-        _ => {
-            error!("Failed to receive agent hello");
-            return;
-        }
-    };
-    let Ok(msg_str) = agent_hello_msg.to_str() else {
-        error!("Agent sent a message that was not a string");
-        return;
-    };
-    let agent_hello: AgentMessage = match serde_json::from_str(msg_str) {
-        Ok(hello) => hello,
+    let agent_hello = match recv_agent_msg(&mut websocket).await {
+        Ok(res) => res,
         Err(err) => {
-            error!("Agent sent an incorrect formatted hello message: {:#}", err);
+            error!("Could not receive agent hello: {:#}", err);
             return;
         }
     };

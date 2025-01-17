@@ -3,27 +3,51 @@ use super::{
     application::{ApplicationInfo, GroupedApplication},
     wol,
 };
-use crate::{agent::messages::ServerMessage, config};
+use crate::{
+    agent::messages::{AgentMessage, ServerMessage},
+    config,
+};
+use anyhow::anyhow;
 use anyhow::Context as _;
-use futures_util::SinkExt as _;
-use log::{debug, info};
+use futures_util::StreamExt as _;
+use futures_util::{stream::SplitSink, SinkExt as _, Stream};
+use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use std::{
     io,
     net::{SocketAddr, ToSocketAddrs as _},
     process,
-    sync::{self, Arc},
+    sync::{
+        self,
+        mpsc::{self, Receiver},
+        Arc,
+    },
     time::Duration,
 };
-use tokio::{process::Command, sync::Mutex};
+use tokio::process::Command;
 use utoipa::ToSchema;
 use warp::filters::ws::{Message, WebSocket};
 
-pub type Store = sync::Arc<Mutex<StoreInner>>;
+pub type Store = sync::Arc<tokio::sync::Mutex<StoreInner>>;
 
 #[derive(Debug)]
 pub struct StoreInner {
     pub machines: Vec<Machine>,
+}
+
+pub async fn recv_agent_msg<R>(websocket: &mut R) -> anyhow::Result<AgentMessage>
+where
+    R: Stream<Item = Result<Message, warp::Error>> + Unpin + Send,
+{
+    let msg = websocket
+        .next()
+        .await
+        .context("Agent closed his websocket")?
+        .context("Failed to received agent message")?;
+    let msg_str = msg
+        .to_str()
+        .map_err(|_empty: ()| anyhow!("Agent sent a message that was not a string"))?;
+    serde_json::from_str(msg_str).context("Agent sent an incorrect formatted message")
 }
 
 impl StoreInner {
@@ -73,7 +97,9 @@ pub struct Machine {
     pub infos: MachineInfos,
     pub addr: SocketAddr,
     applications_list: Vec<ApplicationInfo>,
-    connection: Option<WebSocket>,
+    connection: Option<SplitSink<WebSocket, Message>>,
+    agent_messages: Option<Receiver<AgentMessage>>,
+    listen_message_task: Option<tokio::task::JoinHandle<()>>,
 }
 
 /// SAFETY: its fine :)
@@ -81,6 +107,11 @@ unsafe impl Sync for Machine {}
 
 impl Machine {
     pub async fn update_state(&mut self) {
+        self.check_agent_msg();
+        self.update_status().await;
+    }
+
+    async fn update_status(&mut self) {
         let ping_res = ping_rs::send_ping_async(
             &self.addr.ip(),
             Duration::from_secs(1),
@@ -230,6 +261,8 @@ impl Machine {
                 .context("Error while resolving '{name}' ip")?,
             applications_list: vec![],
             connection: None,
+            agent_messages: None,
+            listen_message_task: None,
         })
     }
 
@@ -239,7 +272,24 @@ impl Machine {
     }
 
     pub fn set_connection(&mut self, connection: WebSocket) {
-        self.connection = Some(connection);
+        let (ws_send, mut ws_recv) = connection.split();
+        let (ch_send, ch_recv) = mpsc::channel();
+        self.connection = Some(ws_send);
+        self.agent_messages = Some(ch_recv);
+        let task = async move {
+            loop {
+                let msg = match recv_agent_msg(&mut ws_recv).await {
+                    Ok(msg) => msg,
+                    Err(err) => {
+                        error!("Receiving agent message: {:#}", err);
+                        continue;
+                    }
+                };
+                debug!("Received message from agent: {:?}", msg);
+                ch_send.send(msg).expect("Backend to be alive");
+            }
+        };
+        self.listen_message_task = Some(tokio::spawn(task));
     }
 
     pub async fn open_app(&self, application_name: &str, dry_run: bool) -> anyhow::Result<()> {
@@ -283,6 +333,31 @@ impl Machine {
             .map_err(|err| format!("{err:#}"))
             .map_err(AgentComunicationError::SendFailed)?;
         Ok(())
+    }
+
+    fn check_agent_msg(&mut self) {
+        if self
+            .listen_message_task
+            .as_ref()
+            .is_some_and(tokio::task::JoinHandle::is_finished)
+        {
+            debug!("Stopped listening for {}'s agent messages", self.infos.name);
+            self.listen_message_task = None;
+        }
+        if let Some(recv) = &self.agent_messages {
+            if let Ok(msg) = recv.try_recv() {
+                self.handle_agent_msg(msg);
+            }
+        }
+    }
+
+    fn handle_agent_msg(&mut self, msg: AgentMessage) {
+        match msg {
+            AgentMessage::Hello(_) => unreachable!("it's handled in main atm"),
+            AgentMessage::VdiClosed => {
+                self.infos.vdi_opened = false;
+            }
+        }
     }
 }
 
