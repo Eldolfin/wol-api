@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context as _};
+use anyhow::{anyhow, Context as _, Error};
 use clap::Parser;
 use figment::{
     providers::{Format as _, Yaml},
@@ -12,7 +12,13 @@ use std::{fs::File, io::Read as _, path::PathBuf, sync::Arc, thread::sleep, time
 use tokio::process::Command;
 use tokio::{net::TcpStream, sync::Mutex};
 use tokio_tungstenite::{
-    connect_async, tungstenite::protocol::Message, MaybeTlsStream, WebSocketStream,
+    client_async_tls_with_config,
+    tungstenite::{
+        client::IntoClientRequest,
+        handshake::client::Response,
+        protocol::Message,
+    },
+    Connector, MaybeTlsStream, WebSocketStream,
 };
 use wol_relay_server::{
     agent::messages::{AgentHello, AgentMessage, ServerMessage},
@@ -94,7 +100,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Connecting to backend at {}", &domain);
     for i in 0..MAX_RETRIES {
         debug!("Try #{}/{}", i, MAX_RETRIES);
-        match connect_async(&domain)
+        match connect(&domain)
             .await
             .with_context(|| format!("Could not connect to backend server at {domain}"))
         {
@@ -178,4 +184,58 @@ async fn open_vdi(start_vdi_cmd: &str) -> anyhow::Result<()> {
     let output = child.wait().await.context("vdi command failed")?;
     debug!("vdi command exited with {:?}", output);
     Ok(())
+}
+
+async fn connect<R>(
+    request: R,
+) -> Result<(WebSocketStream<MaybeTlsStream<TcpStream>>, Response), Error>
+where
+    R: IntoClientRequest + Unpin,
+{
+    let request = request.into_client_request()?;
+    let domain = &request.uri().host().context("domain to have a hostname")?;
+    let port = request
+        .uri()
+        .port_u16()
+        .or_else(|| match request.uri().scheme_str() {
+            Some("wss") => Some(443),
+            Some("ws") => Some(80),
+            _ => None,
+        })
+        .context("Unexpected url scheme")?;
+
+    let config = rustls::ClientConfig::builder()
+        .with_safe_defaults()
+        .with_custom_certificate_verifier(SkipServerVerification::new())
+        .with_no_client_auth();
+    let ccc = Some(Connector::Rustls(std::sync::Arc::new(config)));
+
+    let addr = format!("{domain}:{port}");
+    let socket = TcpStream::connect(addr).await?;
+
+    client_async_tls_with_config(request, socket, None, ccc)
+        .await
+        .context("Could not upgrade to websocket")
+}
+
+struct SkipServerVerification;
+
+impl SkipServerVerification {
+    fn new() -> std::sync::Arc<Self> {
+        std::sync::Arc::new(Self)
+    }
+}
+
+impl rustls::client::ServerCertVerifier for SkipServerVerification {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &rustls::Certificate,
+        _intermediates: &[rustls::Certificate],
+        _server_name: &rustls::ServerName,
+        _scts: &mut dyn Iterator<Item = &[u8]>,
+        _ocsp_response: &[u8],
+        _now: std::time::SystemTime,
+    ) -> Result<rustls::client::ServerCertVerified, rustls::Error> {
+        Ok(rustls::client::ServerCertVerified::assertion())
+    }
 }
