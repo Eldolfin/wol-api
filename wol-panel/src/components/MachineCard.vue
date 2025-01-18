@@ -12,7 +12,12 @@ import {
 } from "@vicons/ionicons5";
 import { api_client, terminal_pane_provide, baseUrl } from "../provides";
 import WindowPortal from "./WindowPortal.vue";
-import { Sanzu, SanzuMenu, SanzuStats, provideSanzuState } from "sanzu-vue";
+import {
+  Sanzu,
+  SanzuMenu,
+  SanzuStats,
+  provideSanzuState,
+} from "@sanzu/sanzu-vue";
 import { VThemeProvider, VApp } from "vuetify/components";
 
 // TODO: change to define props
