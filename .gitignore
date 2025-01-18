@@ -12,3 +12,4 @@ wol-panel/.yarn/releases
 wol-panel/.yarnrc
 wol-panel/test-results
 wol-panel/playwright-report
+wol-api/telemetry/data

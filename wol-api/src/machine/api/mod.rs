@@ -27,7 +27,7 @@ use warp::{
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(list, wake, shutdown,open_vdi, task, list_ws, agent, open_application),
+    paths(list, wake, shutdown, open_vdi, task, list_ws, agent, open_application),
     nest(
         (path = "/ssh", api = ssh::api::Api)
     ),
@@ -159,21 +159,24 @@ pub async fn shutdown(store: Store, name: String, dry_run: bool) -> Result<impl 
     ),
 )]
 #[expect(clippy::significant_drop_tightening, reason = "todo fix mais flemme")]
-pub async fn open_vdi(store: Store, name: String) -> Result<impl Reply, Infallible> {
+pub async fn open_vdi(store: Store, name: String) -> Result<Box<dyn Reply>, Infallible> {
     let mut lock = store.lock().await;
     let Some(machine) = lock.by_name_mut(&name) else {
-        return Ok(reply::with_status(
-            "Machine does not exist".to_owned(),
+        return Ok(Box::new(reply::with_status(
+            reply::Response::default(),
             http::StatusCode::NOT_FOUND,
-        ));
+        )));
     };
 
     match machine.open_vdi().await {
-        Ok(()) => Ok(reply::with_status("Success".to_owned(), StatusCode::OK)),
-        Err(err) => Ok(reply::with_status(
+        Ok(()) => Ok(Box::new(reply::with_status(
+            reply::Response::default(),
+            StatusCode::OK,
+        ))),
+        Err(err) => Ok(Box::new(reply::with_status(
             serde_json::to_string(&err).unwrap(),
             StatusCode::INTERNAL_SERVER_ERROR,
-        )),
+        ))),
     }
 }
 

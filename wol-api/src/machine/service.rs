@@ -42,8 +42,11 @@ where
     let msg = websocket
         .next()
         .await
-        .context("Agent closed his websocket")?
-        .context("Failed to received agent message")?;
+        .context("Agent closed his websocket")?;
+    decode_agent_msg(msg)
+}
+fn decode_agent_msg(msg: Result<Message, warp::Error>) -> anyhow::Result<AgentMessage> {
+    let msg = msg.context("Failed to received agent message")?;
     let msg_str = msg
         .to_str()
         .map_err(|_empty: ()| anyhow!("Agent sent a message that was not a string"))?;
@@ -276,18 +279,20 @@ impl Machine {
         let (ch_send, ch_recv) = mpsc::channel();
         self.connection = Some(ws_send);
         self.agent_messages = Some(ch_recv);
+        let name = self.infos.name.clone();
         let task = async move {
-            loop {
-                let msg = match recv_agent_msg(&mut ws_recv).await {
+            while let Some(msg) = ws_recv.next().await {
+                let msg = match decode_agent_msg(msg) {
                     Ok(msg) => msg,
                     Err(err) => {
-                        error!("Receiving agent message: {:#}", err);
+                        error!("Receiving `{}`'s agent message: {:#}", &name, err);
                         continue;
                     }
                 };
-                debug!("Received message from agent: {:?}", msg);
+                debug!("Received message from `{}`'s agent: {:?}", &name, msg);
                 ch_send.send(msg).expect("Backend to be alive");
             }
+            debug!("Agent of `{}` disconnected", &name);
         };
         self.listen_message_task = Some(tokio::spawn(task));
     }

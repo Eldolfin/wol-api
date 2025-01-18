@@ -100,6 +100,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/machine/{name}/open_vdi": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["open_vdi"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/machine/{name}/shutdown": {
     parameters: {
       query?: never;
@@ -152,6 +168,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    AgentComunicationError:
+      | "NotConnected"
+      | {
+          SendFailed: string;
+        };
     /** @description Application data for the web */
     ApplicationDisplay: {
       /** @example /api/cache/images/steam_icon_526870.png */
@@ -164,13 +185,8 @@ export interface components {
         [key: string]: components["schemas"]["ApplicationDisplay"][];
       };
     };
-    Machine: {
-      applications?: null | components["schemas"]["GroupedApplication"];
-      config: components["schemas"]["MachineCfg"];
-      /** @example computer1 */
-      name: string;
-      state: components["schemas"]["State"];
-      tasks: components["schemas"]["Task"][];
+    ListMachineResponse: {
+      machines: components["schemas"]["MachineInfos"][];
     };
     MachineCfg: {
       /** @example 192.168.1.4 */
@@ -179,6 +195,20 @@ export interface components {
       mac: string;
       tasks?: components["schemas"]["TaskCfg"][];
     };
+    MachineInfos: {
+      applications?: null | components["schemas"]["GroupedApplication"];
+      config: components["schemas"]["MachineCfg"];
+      /** @example computer1 */
+      name: string;
+      state: components["schemas"]["State"];
+      tasks: components["schemas"]["Task"][];
+      vdi_opened: boolean;
+    };
+    OpenVdiError:
+      | {
+          AgentComunicationError: components["schemas"]["AgentComunicationError"];
+        }
+      | "AlreadyOpened";
     /** @description Json message sent by the client's terminal */
     SshClientMessage: {
       message: components["schemas"]["SshClientMessageType"];
@@ -203,13 +233,12 @@ export interface components {
      * @enum {string}
      */
     State: "unknown" | "on" | "off" | "pending_on" | "pending_off";
-    StoreInner: {
-      machines: components["schemas"]["Machine"][];
-    };
     Task: {
       id: number;
     };
     TaskCfg: {
+      /** @example ["echo", "hello", "world"] */
+      command: string[];
       /** @example https://www.pngkit.com/png/full/638-6381661_satisfactory-logo-full-color-square-number.png */
       icon_url: string;
       /** @example Say hello world */
@@ -259,9 +288,7 @@ export interface operations {
         headers: {
           [name: string]: unknown;
         };
-        content: {
-          "application/json": components["schemas"]["StoreInner"];
-        };
+        content?: never;
       };
     };
   };
@@ -280,7 +307,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["StoreInner"];
+          "application/json": components["schemas"]["ListMachineResponse"];
         };
       };
     };
@@ -300,7 +327,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["StoreInner"];
+          "application/json": components["schemas"]["ListMachineResponse"];
         };
       };
     };
@@ -346,6 +373,43 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  open_vdi: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Name of the machine on which to open the vdi */
+        name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Opened the vdi successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Machine does not exist */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Failed to open vdi */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OpenVdiError"];
+        };
       };
     };
   };
