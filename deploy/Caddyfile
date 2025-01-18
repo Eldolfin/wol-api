@@ -1,4 +1,5 @@
-https://
+https://wol.internal.eldolfin.top
+tls internal
 handle /api/* {
 	reverse_proxy host.docker.internal:3030
 }
