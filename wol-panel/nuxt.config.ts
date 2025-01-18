@@ -32,6 +32,9 @@ export default defineNuxtConfig({
     },
   },
   vite: {
+    build: {
+      target: "esnext",
+    },
     optimizeDeps: {
       esbuildOptions: {
         target: "esnext",

@@ -1,5 +1,5 @@
 {
-  "name": "nuxt-app",
+  "name": "wol-front",
   "private": true,
   "type": "module",
   "scripts": {
@@ -25,7 +25,7 @@
     "nuxt": "^3.14.1592",
     "nuxtjs-naive-ui": "1.0.2",
     "openapi-fetch": "^0.13.3",
-    "@sanzu/sanzu-vue": "0.0.3",
+    "@sanzu/sanzu-vue": "0.0.6",
     "vue": "latest",
     "vue-router": "latest"
   },
