@@ -54,10 +54,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Docker Stack Deploy
-        uses: cssnr/stack-deploy-action@v1
+        uses: jtwebman/stack-deploy-action@proposed_registry_login_change
         with:
           name: wol
           file: ./deploy/docker-compose.yml
           host: 192.168.1.1
           user: oscar
           ssh_key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          registry_auth: echo "${{ secrets.REGISTRY_RW_TOKEN }}" | docker login gitea.eldolfin.top -u eldolfin --password-stdin
