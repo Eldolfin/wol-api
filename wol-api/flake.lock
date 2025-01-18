@@ -258,11 +258,11 @@
         "nixpkgs": ["nixpkgs"]
       },
       "locked": {
-        "lastModified": 1736976691,
-        "narHash": "sha256-vsD2NGLlVRxSSvlDBvTFLOK1s/gZsPCYJQzqjIQD7bo=",
+        "lastModified": 1737208145,
+        "narHash": "sha256-EfXUHZqPj2IgIThcVaKkLTYx60PBLm7U+Hpo1JlYfgQ=",
         "ref": "frames-in-datagrams-2nd",
-        "rev": "58ca598cbb79cdf1d0e58ad380c862743ebffc3f",
-        "revCount": 644,
+        "rev": "983aa6dead159a5a3f41658c57c84eda87fd2b23",
+        "revCount": 643,
         "type": "git",
         "url": "ssh://git@eldolfin.top/eldolfin/sanzu.git"
       },
