@@ -4,25 +4,23 @@ import { api_client, baseUrl } from "../provides";
 import { ImageOutline } from "@vicons/ionicons5";
 type Application = components["schemas"]["ApplicationDisplay"];
 
-const props = defineProps<{ application: Application; machine_name: string }>();
+const props = defineProps<{ application: Application; machineName: string }>();
 const api = inject(api_client)!;
 
 async function handleClick() {
-  const res = await api.POST(
-    "/api/machine/{name}/open_application/{application_name}",
-    {
-      params: {
-        path: {
-          name: props.machine_name,
-          application_name: props.application.name,
-        },
+  // TODO: handle error?
+  await api.POST("/api/machine/{name}/open_application/{application_name}", {
+    params: {
+      path: {
+        name: props.machineName,
+        application_name: props.application.name,
       },
     },
-  );
+  });
 }
 </script>
 <template>
-  <n-button @click="handleClick" size="large" :class="['applications-button']">
+  <n-button size="large" :class="['applications-button']" @click="handleClick">
     <n-grid :cols="1">
       <n-gi>
         <n-image

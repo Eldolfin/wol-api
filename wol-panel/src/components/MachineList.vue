@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { wsUrl } from "../provides";
 import type { components } from "../lib/api/v1";
-import { useThemeVars } from "naive-ui";
 
 type State = components["schemas"]["StoreInner"];
 
-const theme = useThemeVars();
 const loadingBar = useLoadingBar();
 const errored = ref(false);
 const { data } = useWebSocket(wsUrl + "/api/machine/list_ws", {

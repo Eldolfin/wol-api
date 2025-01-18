@@ -17,13 +17,13 @@ jobs:
           node-version: lts/*
       - name: Install dependencies
         working-directory: ./wol-panel
-        run: yarn install --production=false
+        run: npm install
       - name: Install Playwright Browsers
         working-directory: ./wol-panel
         run: npx playwright install --with-deps
       - name: Run Playwright tests
         working-directory: ./wol-panel
-        run: yarn run playwright
+        run: npm run playwright
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:

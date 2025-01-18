@@ -5,7 +5,7 @@ import { AppsSharp } from "@vicons/ionicons5";
 type Applications = components["schemas"]["GroupedApplication"];
 
 const props = defineProps<{
-  machine_name: string;
+  machineName: string;
   applications: Applications | null | undefined;
 }>();
 
@@ -40,7 +40,7 @@ const applications = computed(() => {
       Applications
     </n-button>
     <template #empty>
-      <n-scrollbar style="max-height: 60vh" v-if="props.applications">
+      <n-scrollbar v-if="props.applications" style="max-height: 60vh">
         <KeepAlive>
           <n-virtual-list :item-size="42" :items="applications" item-resizable>
             <template #default="{ item, index }">
@@ -58,7 +58,7 @@ const applications = computed(() => {
                     <n-gi>
                       <ApplicationButton
                         :application="application"
-                        :machine_name="machine_name"
+                        :machine-name="machineName"
                       />
                     </n-gi>
                   </template>

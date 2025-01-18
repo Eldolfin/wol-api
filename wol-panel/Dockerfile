@@ -14,7 +14,7 @@ COPY                  \
   ./.env              \
   ./tsconfig.json     \
   ./components.d.ts   \
-  .
+  ./
 
 RUN npm run generate
 

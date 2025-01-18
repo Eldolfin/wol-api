@@ -1,6 +1,6 @@
 <!-- adapted from https://github.com/Shamus03/vue-window-portal/blob/30ab2b15f9121f7bb5417cf93eb52ba5a9e4908c/src/components/VueWindowPortal.vue -->
 <template>
-  <div ref="child" v-if="open" v-show="windowLoaded">
+  <div v-if="open" v-show="windowLoaded" ref="child">
     <slot />
   </div>
 </template>

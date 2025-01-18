@@ -201,7 +201,7 @@ provideSanzuState();
           <Sanzu
             :webtransport-url="webtransportURL"
             :websocket-url="websocketURL"
-            :serverCertificateHash="serverCertificateHash"
+            :server-certificate-hash="serverCertificateHash"
           />
           <SanzuMenu />
           <SanzuStats />
@@ -272,8 +272,8 @@ provideSanzuState();
             </n-button>
             <n-button
               :loading="loading"
-              @click="handleOpenVdi"
               :disabled="machine.vdi_opened && sanzuOpened"
+              @click="handleOpenVdi"
             >
               <template #icon>
                 <n-icon>
@@ -284,7 +284,7 @@ provideSanzuState();
             </n-button>
             <ApplicationList
               :applications="machine.applications"
-              :machine_name="machine.name"
+              :machine-name="machine.name"
             />
           </n-space>
         </n-button-group>
