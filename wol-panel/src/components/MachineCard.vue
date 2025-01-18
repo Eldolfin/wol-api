@@ -15,7 +15,7 @@ import { Sanzu, SanzuMenu, SanzuStats, provideSanzuState } from "sanzu-vue";
 import { VThemeProvider, VApp } from "vuetify/components";
 
 // TODO: change to define props
-const machine = defineModel<components["schemas"]["Machine"]>("machine", {
+const machine = defineModel<components["schemas"]["MachineInfos"]>("machine", {
   required: true,
 });
 
@@ -135,9 +135,52 @@ const parsed_ip = computed(() => {
 function handleOpenTerminal() {
   terminalState.connectToMachine(machine.value.name);
 }
+async function handleOpenVdi() {
+  const res = await api.POST("/api/machine/{name}/open_vdi", {
+    params: { path: { name: machine.value.name } },
+  });
+  if (res?.response?.status === 200) {
+    sanzuOpened.value = true;
+  } else if (res!.response.status === 404) {
+    unreachable();
+  } else if (res!.response.status === 500) {
+    let message;
+    switch (res!.error!) {
+      case "AlreadyOpened":
+        message = "It's already opened";
+        if (!sanzuOpened.value) {
+          sanzuOpened.value = true;
+          return;
+        }
+        break;
+      default:
+        switch (res!.error!.AgentComunicationError) {
+          case "NotConnected":
+            message = "Agent is not connected";
+            break;
+          default:
+            message = res!.error!.AgentComunicationError!.SendFailed;
+            message = `Failed to ask the agent to open the vdi: ${message}`;
+            break;
+        }
+    }
+    notification.error({
+      title: "Error opening vdi",
+      content: message,
+      description: res?.response.statusText,
+      duration: 5000,
+    });
+  }
 
-function handleOpenVdi() {
-  sanzuOpened.value = true;
+  watchDebounced(
+    machine,
+    (newMachine) => {
+      if (!newMachine.vdi_opened && sanzuOpened.value) {
+        handleOpenVdi();
+      }
+    },
+    { debounce: 1000 },
+  );
 }
 const webtransportURL = "https://127.0.0.1:1122";
 const websocketURL = "ws://127.0.0.1:1123";
@@ -224,7 +267,11 @@ provideSanzuState();
               </template>
               Open remote terminal
             </n-button>
-            <n-button :loading="loading" @click="handleOpenVdi">
+            <n-button
+              :loading="loading"
+              @click="handleOpenVdi"
+              :disabled="machine.vdi_opened && sanzuOpened"
+            >
               <template #icon>
                 <n-icon>
                   <LogInOutline />
