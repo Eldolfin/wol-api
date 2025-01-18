@@ -10,7 +10,8 @@ services:
     volumes:
       - "/home/oscar/wol-api/deploy/wol-config.yml:/app/config.yml"
       - "/home/oscar/.ssh/id_ed25519:/root/.ssh/id_ed25519"
-
+    ports:
+      - 3030:3030 # unsecure websocket
   wol-panel:
     image: gitea.eldolfin.top/eldolfin/wol-panel:latest
     build: ../wol-panel
