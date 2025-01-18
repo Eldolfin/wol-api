@@ -1,4 +1,4 @@
-name: "Build docker image"
+name: "Build docker image and deploy"
 on:
   push:
     branches:
@@ -29,6 +29,7 @@ jobs:
           tags: gitea.eldolfin.top/eldolfin/wol-panel:latest
           file: ./wol-panel/Dockerfile
           context: ./wol-panel
+          build-args: REGISTRY_RW_TOKEN=${{ secrets.REGISTRY_RW_TOKEN }}
 
       - name: Build and push api docker image
         uses: docker/build-push-action@v6

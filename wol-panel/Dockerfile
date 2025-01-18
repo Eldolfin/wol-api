@@ -1,6 +1,10 @@
 FROM node:23-alpine3.19 AS builder
 WORKDIR /app
-COPY package-lock.json package.json ./
+COPY .npmrc package-lock.json package.json ./
+
+ARG REGISTRY_RW_TOKEN
+RUN npm config set @sanzu:registry=https://gitea.eldolfin.top/api/packages/eldolfin/npm/ && \
+    npm config set -- '//gitea.eldolfin.top/api/packages/eldolfin/npm/:_authToken' ${REGISTRY_RW_TOKEN}
 
 RUN npm install
 
