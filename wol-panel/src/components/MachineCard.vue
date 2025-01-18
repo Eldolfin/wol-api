@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // TODO: remove vuetify dep
+import { asyncSleep } from "../lib/utils/async";
 import "vuetify/styles";
 import { useThemeVars } from "naive-ui";
 import type { components } from "../lib/api/v1";
@@ -172,18 +173,20 @@ async function handleOpenVdi() {
     });
   }
 
-  watchDebounced(
-    machine,
-    (newMachine) => {
-      if (!newMachine.vdi_opened && sanzuOpened.value) {
-        handleOpenVdi();
+  watch(
+    () => machine,
+    async (newMachine) => {
+      while (!newMachine.value.vdi_opened && sanzuOpened.value) {
+        await handleOpenVdi();
+        await asyncSleep(1000);
       }
     },
-    { debounce: 1000 },
   );
 }
-const webtransportURL = "https://127.0.0.1:1122";
-const websocketURL = "ws://127.0.0.1:1123";
+const webtransportURL = computed(
+  () => `https://${parsed_ip.value.ssh_host}:1122`,
+);
+const websocketURL = computed(() => `ws://${parsed_ip.value.ssh_host}:1123`);
 const serverCertificateHash = new Uint8Array([
   62, 254, 188, 32, 121, 169, 163, 188, 223, 159, 214, 60, 230, 110, 134, 148,
   173, 250, 93, 53, 92, 183, 129, 43, 85, 111, 83, 149, 23, 13, 190, 233,

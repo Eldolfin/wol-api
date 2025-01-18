@@ -170,7 +170,7 @@ async fn send_message(ws: &Omg, msg: &AgentMessage) -> anyhow::Result<()> {
 }
 
 async fn open_vdi(start_vdi_cmd: &str) -> anyhow::Result<()> {
-    let mut child = Command::new("sh")
+    let mut child = Command::new("/bin/sh")
         .arg("-c")
         .arg(start_vdi_cmd)
         .spawn()

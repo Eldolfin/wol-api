@@ -348,6 +348,7 @@ impl Machine {
         {
             debug!("Stopped listening for {}'s agent messages", self.infos.name);
             self.listen_message_task = None;
+            self.infos.vdi_opened = false; // agent was killed so we assume the vdi died too
         }
         if let Some(recv) = &self.agent_messages {
             if let Ok(msg) = recv.try_recv() {

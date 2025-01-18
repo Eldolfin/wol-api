@@ -54,6 +54,7 @@
               RUST_LOG = "debug";
               # hardcode... 🙄
               XDG_DATA_DIRS = "/home/oscar/.nix-profile/share:/nix/profile/share:/home/oscar/.local/state/nix/profile/share:/etc/profiles/per-user/oscar/share:/nix/var/nix/profiles/default/share:/run/current-system/sw/share:/home/oscar/.local/share/applications";
+              DISPLAY = ":0";
             };
 
             serviceConfig = let
