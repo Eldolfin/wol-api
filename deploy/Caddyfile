@@ -1,4 +1,4 @@
-http://
+https://
 handle /api/* {
 	reverse_proxy host.docker.internal:3030
 }
