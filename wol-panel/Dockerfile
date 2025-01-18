@@ -11,6 +11,7 @@ RUN npm install
 COPY ./server ./server
 COPY ./public ./public
 COPY ./src ./src
+COPY ./plugins ./plugins
 COPY                  \
   ./nuxt.config.ts    \
   ./auto-imports.d.ts \
