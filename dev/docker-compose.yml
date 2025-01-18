@@ -20,6 +20,8 @@ services:
     build:
       context: ../
       dockerfile: ./wol-panel/Dockerfile.dev
+      args:
+        - REGISTRY_RW_TOKEN=${REGISTRY_RW_TOKEN}
     user: "${UID}:${GID}"
     volumes:
       - ../wol-panel:/app/wol-panel
@@ -27,3 +29,20 @@ services:
     ports:
       - 3000:3000
     restart: unless-stopped
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

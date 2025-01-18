@@ -15,7 +15,7 @@ run-docker:
     alacritty -o 'font.size=10' -e sh -c "just start-docker-here" &
 
 start-docker-here:
-    cd ./dev && docker compose down && docker compose up -d --build
+    cd ./dev && docker compose down && docker compose --env-file .env up -d --build
 
 deploy:
     git push gitea

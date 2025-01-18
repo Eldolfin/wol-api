@@ -30,4 +30,7 @@ const api_path = (() => {
   return api_path;
 })();
 export const baseUrl = new URL(api_path);
-export const wsUrl = `ws://${baseUrl.host}`;
+export const wsUrl = (() =>
+  baseUrl.protocol === "https:"
+    ? `wss://${baseUrl.host}`
+    : `ws://${baseUrl.host}`)();

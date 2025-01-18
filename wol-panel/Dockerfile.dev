@@ -1,6 +1,10 @@
 FROM node:23-alpine3.19
 WORKDIR /app/wol-panel
 
+ARG REGISTRY_RW_TOKEN
+RUN npm config set @sanzu:registry=https://gitea.eldolfin.top/api/packages/eldolfin/npm/ && \
+    npm config set -- '//gitea.eldolfin.top/api/packages/eldolfin/npm/:_authToken' ${REGISTRY_RW_TOKEN}
+
 RUN apk add entr
 COPY wol-panel/package-lock.json wol-panel/package.json ./
 

@@ -10,7 +10,7 @@ machines:
         command: ["echo", "hello", "world"]
   reel:
     mac: "02:42:ac:12:00:02"
-    ip: "127.0.0.1:22"
+    ip: "192.168.1.167:22"
     tasks:
       - name: Fake task
         icon_url: "https://upload.wikimedia.org/wikipedia/commons/8/88/Noia_64_apps_xeyes.png"
