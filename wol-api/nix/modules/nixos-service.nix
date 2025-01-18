@@ -28,41 +28,51 @@
         };
 
         sanzupkg = mkOption {
-          type = types.str;
-          example = "sanzu.default";
+          type = types.package;
+          default = inputs.sanzu;
+          example = literalExpression "inputs.sanzu.default";
           description = "Package to use for vdi";
-          default = inputs.sanzu.default;
         };
       };
 
-      config = mkIf cfg.enable {
-        configFile = writeTextFile {
-          name = "agent-config.yml";
-          text = ''
-            start_vdi_cmd = "${config.sanzupkg}/bin/sanzu_server -f ${config.sanzupkg.default-config} -e h264_nvenc"
-            machine_name = "${cfg.machine-name}"
-            domain = "${cfg.domain}"
-          '';
-        };
-        systemd.services."eldolfin.wol-agent" = {
-          wantedBy = ["multi-user.target"];
-
-          serviceConfig = let
-            pkg = self.packages.${pkgs.system}.default;
-          in {
-            Restart = "on-failure";
-            ExecStart = "${pkg}/bin/agent --config ${configFile}";
-            DynamicUser = "yes";
-            RuntimeDirectory = "eldolfin.wol-agent";
-            RuntimeDirectoryMode = "0755";
-            StateDirectory = "eldolfin.wol-agent";
-            StateDirectoryMode = "0700";
-            CacheDirectory = "eldolfin.wol-agent";
-            CacheDirectoryMode = "0750";
-            Environment = "RUST_LOG=debug";
+      config =
+        mkIf cfg.enable
+        (let
+          sanzu = cfg.sanzupkg.packages.x86_64-linux.default;
+          configFile = pkgs.writeTextFile {
+            name = "agent-config.yml";
+            text = ''
+              start_vdi_cmd: "${sanzu}/bin/sanzu_server -f ${sanzu}/sanzu.toml -e h264_nvenc -l 0.0.0.0"
+              machine_name: "${cfg.machine-name}"
+              domain: "${cfg.domain}"
+            '';
           };
-        };
-      };
+        in {
+          systemd.services."eldolfin.wol-agent" = {
+            wantedBy = ["multi-user.target"];
+            environment = {
+              RUST_LOG = "debug";
+              # hardcode... 🙄
+              XDG_DATA_DIRS = "/home/oscar/.nix-profile/share:/nix/profile/share:/home/oscar/.local/state/nix/profile/share:/etc/profiles/per-user/oscar/share:/nix/var/nix/profiles/default/share:/run/current-system/sw/share:/home/oscar/.local/share/applications";
+            };
+
+            serviceConfig = let
+              pkg = self.packages.${pkgs.system}.default;
+            in {
+              Restart = "always";
+              RestartSec = 2;
+              ExecStart = "!${pkg}/bin/agent ${configFile}";
+              User = "oscar";
+              # DynamicUser = "yes";
+              RuntimeDirectory = "eldolfin.wol-agent";
+              RuntimeDirectoryMode = "0755";
+              StateDirectory = "eldolfin.wol-agent";
+              StateDirectoryMode = "0700";
+              CacheDirectory = "eldolfin.wol-agent";
+              CacheDirectoryMode = "0750";
+            };
+          };
+        });
     };
 in {
   flake.nixosModules.default = nixosModule;
