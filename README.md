@@ -1,5 +1,9 @@
 # Wake on lan relay api
 
+## Screenshots
+
+./screenshots/2025-01-21_Chromium-browser_1920x1060_001.png
+
 ## Initial goals:
 
 - [x]: Rust part, web server, wol and cli/config
@@ -9,14 +13,12 @@
 - [x]: deploy on rpi
 - [x]: auto deploy on push
 - [x]: xterm ssh access option
-- [x]: launch apps/games with icons. (config entry with icon url and command to run)
+- [x]: launch apps/games with icons
 - [x]: config for running arbitrary command 'actions' on host/machine
-- [ ]: connect vdi button
-- [ ]: machine agent reporting state + monitoring stats (cpu, memory, uptime/last online)
-  - [ ]: can also be used as an alternative to ping/ssh
-- [ ]: nix service agent
-- [ ]: nixos package and nix ci
-- [ ]: nixos module with a systemd service
+- [x]: connect vdi button
+- [x]: nix service agent
+- [x]: nixos package and nix ci
+- [x]: nixos module with a systemd service
 
 ## Resources
 
@@ -27,9 +29,8 @@ Might be interesting at some point
 
 ## Similar projects
 
-- https://github.com/rix1337/WakeOnLAN-API/blob/main/wol_api/run.py
-  super simple, similar to the project at the root
-- https://github.com/seriousm4x/UpSnap
-  Looks feature complete, beatifull ui, database, crud machine management, auto discovery and more
-- https://github.com/Misterbabou/gptwol
-  Simple, similar ui, not many features
+- https://github.com/rix1337/WakeOnLAN-API/blob/main/wol_api/run.py super
+  simple, similar to the project at the root
+- https://github.com/seriousm4x/UpSnap Looks feature complete, beatifull ui,
+  database, crud machine management, auto discovery and more
+- https://github.com/Misterbabou/gptwol Simple, similar ui, not many features
