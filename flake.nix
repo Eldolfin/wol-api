@@ -26,7 +26,7 @@
       # See ./nix/modules/*.nix for the modules that are imported here.
       imports = with builtins;
         map
-        (fn: ./nix/modules/${fn})
-        (attrNames (readDir ./nix/modules));
+        (fn: ./wol-api/nix/modules/${fn})
+        (attrNames (readDir ./wol-api/nix/modules));
     };
 }
