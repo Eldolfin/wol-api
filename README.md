@@ -2,7 +2,7 @@
 
 ## Screenshots
 
-()[./screenshots/2025-01-21_Chromium-browser_1920x1060_001.png]
+[](screenshots/2025-01-21_Chromium-browser_1920x1060_001.png)
 
 ## Initial goals:
 
