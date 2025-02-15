@@ -33,11 +33,11 @@
     },
     "crane_2": {
       "locked": {
-        "lastModified": 1739053031,
-        "narHash": "sha256-LrMDRuwAlRFD2T4MgBSRd1s2VtOE+Vl1oMCNu3RpPE0=",
+        "lastModified": 1739638817,
+        "narHash": "sha256-pPiI27T416xAAUETorkLAgHQMiLT92moOrf0ItHhtPA=",
         "owner": "ipetkov",
         "repo": "crane",
-        "rev": "112e6591b2d6313b1bd05a80a754a8ee42432a7e",
+        "rev": "bef2b45cd1273a9e621fb5292de89f4ed59ad812",
         "type": "github"
       },
       "original": {
@@ -49,7 +49,7 @@
     "fenix": {
       "inputs": {
         "nixpkgs": ["sanzu", "nixpkgs"],
-        "rust-analyzer-src": ["sanzu"]
+        "rust-analyzer-src": "rust-analyzer-src"
       },
       "locked": {
         "lastModified": 1739601191,
@@ -214,6 +214,23 @@
         "treefmt-nix": "treefmt-nix"
       }
     },
+    "rust-analyzer-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1739512757,
+        "narHash": "sha256-QfmtsyySvQSEKLuB850AmyqpNQRP+T57vuZnGIpmGD4=",
+        "owner": "rust-lang",
+        "repo": "rust-analyzer",
+        "rev": "40e4f9130f4e44f20961a7cf4ade46325126698b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rust-lang",
+        "ref": "nightly",
+        "repo": "rust-analyzer",
+        "type": "github"
+      }
+    },
     "rust-overlay": {
       "inputs": {
         "nixpkgs": ["nixpkgs"]
@@ -241,11 +258,11 @@
         "nixpkgs": ["nixpkgs"]
       },
       "locked": {
-        "lastModified": 1739630362,
-        "narHash": "sha256-USARM0JB9OPXDTkGTjXI4dolKKr6dwiMG8SFI8Pt6Cg=",
+        "lastModified": 1739646362,
+        "narHash": "sha256-CPuWANMGT7ftUvgWh99qTlqY1Y3R7DEU2IwuYwRJF6A=",
         "ref": "main",
-        "rev": "37645f8bf3399ad7c9654a89a622bc3cfd2dba84",
-        "revCount": 668,
+        "rev": "d8866b21eb61f8fcb18c928803bd26d7ab29db94",
+        "revCount": 670,
         "type": "git",
         "url": "ssh://git@eldolfin.top/eldolfin/sanzu.git"
       },

@@ -14,3 +14,4 @@ wol-panel/test-results
 wol-panel/playwright-report
 wol-api/telemetry/data
 dev/.env
+result
