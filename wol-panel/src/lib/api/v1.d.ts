@@ -202,6 +202,7 @@ export interface components {
       name: string;
       state: components["schemas"]["State"];
       tasks: components["schemas"]["Task"][];
+      vdi_cert_hash?: null | components["schemas"]["Vec"];
       vdi_opened: boolean;
     };
     OpenVdiError:
@@ -244,6 +245,7 @@ export interface components {
       /** @example Say hello world */
       name: string;
     };
+    Vec: number[];
   };
   responses: never;
   parameters: never;
