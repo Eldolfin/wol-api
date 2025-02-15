@@ -34,9 +34,9 @@ export default defineNuxtConfig({
   vite: {
     build: {
       target: "esnext",
-      rollupOptions: {
-        external: ["@sanzu/sanzu-vue"],
-      },
+      // rollupOptions: {
+      //   external: ["@sanzu/sanzu-vue"],
+      // },
     },
     optimizeDeps: {
       esbuildOptions: {
