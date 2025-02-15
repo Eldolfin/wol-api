@@ -5,19 +5,23 @@ use figment::{
     Figment,
 };
 use futures_util::{stream::SplitSink, SinkExt as _, StreamExt as _};
+use inotify::{Inotify, WatchMask};
 use log::{debug, error, info, warn};
 use rayon::prelude::*;
 use serde::Deserialize;
-use std::{fs::File, io::Read as _, path::PathBuf, sync::Arc, thread::sleep, time::Duration};
+use std::{
+    fs::{self, File},
+    io::Read as _,
+    path::PathBuf,
+    sync::Arc,
+    thread::sleep,
+    time::Duration,
+};
 use tokio::process::Command;
 use tokio::{net::TcpStream, sync::Mutex};
 use tokio_tungstenite::{
     client_async_tls_with_config,
-    tungstenite::{
-        client::IntoClientRequest,
-        handshake::client::Response,
-        protocol::Message,
-    },
+    tungstenite::{client::IntoClientRequest, handshake::client::Response, protocol::Message},
     Connector, MaybeTlsStream, WebSocketStream,
 };
 use wol_relay_server::{
@@ -27,6 +31,8 @@ use wol_relay_server::{
 
 const MAX_RETRIES: usize = 32;
 const RETRIES_INTERVAL: Duration = Duration::from_secs(1);
+
+type Socket = Arc<Mutex<SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>>>;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -147,7 +153,7 @@ async fn main() -> anyhow::Result<()> {
                 let start_vdi_cmd = start_vdi_cmd.clone();
                 let socket = sock_send.clone();
                 tokio::spawn(async move {
-                    if let Err(err) = open_vdi(&start_vdi_cmd)
+                    if let Err(err) = open_vdi(&socket, &start_vdi_cmd)
                         .await
                         .with_context(|| format!("Failed to open vdi (cmd = {:#})", &start_vdi_cmd))
                     {
@@ -165,8 +171,7 @@ async fn main() -> anyhow::Result<()> {
     // Ok(())
 }
 
-type Omg = Arc<Mutex<SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>>>;
-async fn send_message(ws: &Omg, msg: &AgentMessage) -> anyhow::Result<()> {
+async fn send_message(ws: &Socket, msg: &AgentMessage) -> anyhow::Result<()> {
     debug!("Sending msg to backend");
     ws.lock()
         .await
@@ -175,12 +180,36 @@ async fn send_message(ws: &Omg, msg: &AgentMessage) -> anyhow::Result<()> {
         .context("Could not send message to backend")
 }
 
-async fn open_vdi(start_vdi_cmd: &str) -> anyhow::Result<()> {
+async fn open_vdi(socket: &Socket, start_vdi_cmd: &str) -> anyhow::Result<()> {
     let mut child = Command::new("/bin/sh")
         .arg("-c")
         .arg(start_vdi_cmd)
         .spawn()
         .context("Failed to spawn command")?;
+    let inotify = Inotify::init().expect("Failed to initialize inotify");
+    const CERTIFICATE_HASH_PATH: &str = "/tmp/sanzu-webtransport-cert-hash.txt";
+    inotify
+        .watches()
+        .add(CERTIFICATE_HASH_PATH, WatchMask::MODIFY)
+        .with_context(|| {
+            format!(
+                "Failed to add a watcher on certificate file {}",
+                CERTIFICATE_HASH_PATH
+            )
+        })?;
+    let mut buffer = [0; 1024];
+    let mut stream = inotify.into_event_stream(&mut buffer).unwrap();
+    let _ev = stream.next();
+    let hash_str = fs::read_to_string(CERTIFICATE_HASH_PATH).with_context(|| {
+        format!(
+            "Failed to read webtransport certificate hash file at {}",
+            CERTIFICATE_HASH_PATH
+        )
+    })?;
+    let hash = serde_json::from_str(&hash_str)
+        .context("webtransport certificate hash file did not contain a u8 array in json format")?;
+    send_message(socket, &AgentMessage::VdiCertificateHash(hash)).await?;
+
     let output = child.wait().await.context("vdi command failed")?;
     debug!("vdi command exited with {:?}", output);
     Ok(())

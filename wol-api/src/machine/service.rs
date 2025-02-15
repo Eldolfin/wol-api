@@ -4,7 +4,7 @@ use super::{
     wol,
 };
 use crate::{
-    agent::messages::{AgentMessage, ServerMessage},
+    agent::messages::{AgentMessage, ServerMessage, WebtransportCertificateHash},
     config,
 };
 use anyhow::anyhow;
@@ -91,6 +91,7 @@ pub struct MachineInfos {
     pub state: State,
     pub tasks: Vec<Task>,
     pub vdi_opened: bool,
+    pub vdi_cert_hash: Option<WebtransportCertificateHash>,
     pub config: config::MachineCfg,
     pub applications: Option<GroupedApplication>,
 }
@@ -255,6 +256,7 @@ impl Machine {
                 tasks: vec![],
                 applications: None,
                 vdi_opened: false,
+                vdi_cert_hash: None,
             },
             addr: config
                 .ip
@@ -349,6 +351,7 @@ impl Machine {
             debug!("Stopped listening for {}'s agent messages", self.infos.name);
             self.listen_message_task = None;
             self.infos.vdi_opened = false; // agent was killed so we assume the vdi died too
+            self.infos.vdi_cert_hash = None;
         }
         if let Some(recv) = &self.agent_messages {
             if let Ok(msg) = recv.try_recv() {
@@ -358,10 +361,14 @@ impl Machine {
     }
 
     fn handle_agent_msg(&mut self, msg: AgentMessage) {
+        #[expect(clippy::enum_glob_use, reason = "Cool")]
+        use AgentMessage::*;
         match msg {
-            AgentMessage::Hello(_) => unreachable!("it's handled in main atm"),
-            AgentMessage::VdiClosed => {
+            Hello(_) => unreachable!("it's handled in main atm"),
+            VdiCertificateHash(hash) => self.infos.vdi_cert_hash = Some(hash),
+            VdiClosed => {
                 self.infos.vdi_opened = false;
+                self.infos.vdi_cert_hash = None;
             }
         }
     }
