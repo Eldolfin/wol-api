@@ -15,7 +15,7 @@
     treefmt-nix.url = "github:numtide/treefmt-nix";
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
     sanzu = {
-      url = "git+ssh://git@eldolfin.top/eldolfin/sanzu.git?ref=frames-in-datagrams-2nd";
+      url = "git+ssh://git@eldolfin.top/eldolfin/sanzu.git?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
