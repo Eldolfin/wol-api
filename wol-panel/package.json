@@ -17,7 +17,7 @@
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "@nuxt/eslint": "0.7.3",
-    "@sanzu/sanzu-vue": "0.1.3",
+    "@sanzu/sanzu-vue": "0.1.4",
     "@vicons/ionicons5": "^0.12.0",
     "@vueuse/nuxt": "12.0.0",
     "@xterm/addon-fit": "^0.10.0",
