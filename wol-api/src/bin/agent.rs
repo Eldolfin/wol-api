@@ -181,34 +181,43 @@ async fn send_message(ws: &Socket, msg: &AgentMessage) -> anyhow::Result<()> {
 }
 
 async fn open_vdi(socket: &Socket, start_vdi_cmd: &str) -> anyhow::Result<()> {
+    let certificate_hash_path: PathBuf = "/tmp/sanzu/webtransport-cert-hash.txt".into();
+    fs::remove_file(&certificate_hash_path).with_context(|| {
+        format!(
+            "Could not delete certificate hash file at {}",
+            certificate_hash_path.display(),
+        )
+    })?;
     let mut child = Command::new("/bin/sh")
         .arg("-c")
         .arg(start_vdi_cmd)
         .spawn()
         .context("Failed to spawn command")?;
     let inotify = Inotify::init().expect("Failed to initialize inotify");
-    const CERTIFICATE_HASH_PATH: &str = "/tmp/sanzu-webtransport-cert-hash.txt";
     inotify
         .watches()
-        .add(CERTIFICATE_HASH_PATH, WatchMask::MODIFY)
+        .add(
+            certificate_hash_path.parent().unwrap(),
+            WatchMask::CLOSE_WRITE,
+        )
         .with_context(|| {
             format!(
                 "Failed to add a watcher on certificate file {}",
-                CERTIFICATE_HASH_PATH
+                certificate_hash_path.display()
             )
         })?;
     let mut buffer = [0; 1024];
     let mut stream = inotify.into_event_stream(&mut buffer).unwrap();
-    let _ev = stream.next();
-    let hash_str = fs::read_to_string(CERTIFICATE_HASH_PATH).with_context(|| {
-        format!(
-            "Failed to read webtransport certificate hash file at {}",
-            CERTIFICATE_HASH_PATH
-        )
-    })?;
-    let hash = serde_json::from_str(&hash_str)
-        .context("webtransport certificate hash file did not contain a u8 array in json format")?;
-    send_message(socket, &AgentMessage::VdiCertificateHash(hash)).await?;
+    loop {
+        let _ev = stream.next();
+        if let Some(hash) = fs::read_to_string(&certificate_hash_path)
+            .ok()
+            .and_then(|hash_str| serde_json::from_str(&hash_str).ok())
+        {
+            send_message(socket, &AgentMessage::VdiCertificateHash(hash)).await?;
+            break;
+        }
+    }
 
     let output = child.wait().await.context("vdi command failed")?;
     debug!("vdi command exited with {:?}", output);
