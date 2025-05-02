@@ -26,23 +26,15 @@
           example = "tour";
           description = "The machine name identify as to the backend";
         };
-
-        sanzupkg = mkOption {
-          type = types.package;
-          default = inputs.sanzu;
-          example = literalExpression "inputs.sanzu.default";
-          description = "Package to use for vdi";
-        };
       };
 
       config =
         mkIf cfg.enable
         (let
-          sanzu = cfg.sanzupkg.packages.x86_64-linux.default;
           configFile = pkgs.writeTextFile {
             name = "agent-config.yml";
             text = ''
-              start_vdi_cmd: "${sanzu}/bin/sanzu_server -f ${sanzu}/sanzu.toml -e h264_nvenc -l 0.0.0.0"
+              start_vdi_cmd: "echo removed vdi!"
               machine_name: "${cfg.machine-name}"
               domain: "${cfg.domain}"
             '';
